@@ -8,12 +8,14 @@ from numba import jit
 import csv
 import math
 import datetime
-
+import time
+# import cvxpy as cvx
 from scipy import sparse as sp
 from scipy.linalg import lstsq
 from scipy.linalg import solve
 from scipy.optimize import nnls
 import scipy
+import os
 
 
 @jit
@@ -31,7 +33,6 @@ def gaussiankernel(x, z, args, N):
         y = 1. / (2. * pi) ** (N / 2.) * abs(linalg.det(sigma)) ** (-1.) * exp(
             (-1. / 2.) * dot((x - z) ** 2, array(cov)))
     return y
-
 
 
 def construct_rxt(x):
@@ -61,25 +62,49 @@ def construct_rxt(x):
     return rxt
 
 
-def minimizer_L1(x):
-    D = x[1]
-    y = -x[0].T
-    # print('D>>>>>>>>>>>>>>>>>>>>>>')
-    # print(D)
-    # print('y>>>>>>>>>>>>>>>>>>>>>>')
-    # print(y)
+def lessObsUpConstrain(x,D,y):
+    temp = y - matmul(D,x.reshape(len(x),1))
+    #print(temp)
+    eq = asscalar(matmul(temp.T,temp))
+    return -eq+0.01
 
-    edge_row, residual = nnls(D, y)
-    # print(residual)
-    # edge_row = MatchingPursuit(y,D,orthogonal=True)
-    return edge_row
+def moreObsfunc(x,D,y):
+    temp = y.reshape(len(y),1)-dot(D,x.reshape(len(x),1))
+    #print(y.shape)
+    temp = temp.reshape(1,len(temp))
+    return asscalar(dot(temp,temp.T))
+
+def square_sum(x):
+    #x must be 1*N
+    #x = x.reshape(len(x),1)
+    y = dot(x,x)
+    return y
+
+def minimizer_L1(x):
+    D=x[1]
+    y=x[0].T
+    y = y.reshape(len(y),1)
+    # x0=x[2].reshape(D.shape[1],)-(random.rand(D.shape[1]))/100
+    x0=ones(D.shape[1],)
+    if(D.shape[0] < D.shape[1]):
+        upcons = {'type':'ineq','fun':lessObsUpConstrain,'args':(D,y)}
+        result = scipy.optimize.minimize(square_sum, x0, args=(), method='SLSQP', jac=None, bounds=scipy.optimize.Bounds(0,1), constraints=[upcons], tol=None, callback=None, options={'maxiter': 100, 'ftol': 1e-06, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-08})
+    else:
+        result = scipy.optimize.minimize(moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=scipy.optimize.Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
+    return result.x
 
 
 
 if __name__ == '__main__':
-    # from_file = "/Users/woffee/www/network_research/data/example_data_for_fast_method/input.csv"
-    from_file = "/Users/woffee/www/miningHiddenLink/proposal/data/input.csv"
-    to_file   = "/Users/woffee/www/miningHiddenLink/proposal/data/to_file0918.csv"
+    dt = 0.1
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    save_path = BASE_DIR + '/data/'
+
+    from_file = save_path + "input.csv"
+    to_file   = save_path + "to_file" + time.strftime("%m%d", time.localtime()) + ".csv"
+
+
     # script, from_file, to_file = argv
     # print(f"Reading from {from_file}  the result will be saved to {to_file}")
     # print(f"Does the output file exist? {exists(to_file)}")
@@ -187,11 +212,29 @@ if __name__ == '__main__':
     overline_r_all2_splite = overline_r_all2_add[:, 1:]
     diff_x_all = overline_r_all2_splite - overline_r_all
     print("diff_x_all:", diff_x_all.shape)
+
+    # zero_row_ids = []
+    # nonezero_row_ids = []
+    # row_id_in_diff_x_all = 0
+    # for row in diff_x_all:
+    #     if (all(row == 0)):
+    #         zero_row_ids.append(row_id_in_diff_x_all)
+    #     else:
+    #         nonezero_row_ids.append(row_id_in_diff_x_all)
+    #     row_id_in_diff_x_all = row_id_in_diff_x_all + 1
+    #
+    # diff_x_nonezero = delete(diff_x_all, zero_row_ids, 0)
+    # for i in range(len(nonezero_row_ids) - 1):
+    #     diff_x_nonezero[i, :] = diff_x_nonezero[i, :] / ((nonezero_row_ids[i + 1] - nonezero_row_ids[i]) * dt)
+    #
+    # D = delete(rxt_matrix, zero_row_ids, 0)
+
     # reconstruct the compress sensing signal to get edge function
     xit_all = []
     for xit in diff_x_all:
         xit_matrix = []
         xit_matrix.append(xit)
+        # xit_matrix.append(D)
         xit_matrix.append(rxt_matrix)
         xit_all.append(xit_matrix)
     edge_list = pool.map(minimizer_L1, xit_all)
@@ -203,6 +246,7 @@ if __name__ == '__main__':
     with open(to_file, "w") as f:
         writer = csv.writer(f)
         writer.writerows(edge_list)
+    print(to_file)
 
     # cores = multiprocessing.cpu_count()
     # pool = multiprocessing.Pool(processes=cores)
