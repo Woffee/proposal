@@ -17,6 +17,7 @@ import math
 from scipy.optimize import nnls
 from scipy.stats import chi
 import random
+from clean_data import Clean_data
 
 # calculate error in 1.5
 def get_min_error(E1, E2, n, k, t):
@@ -217,6 +218,16 @@ def save_E(E, filepath):
         writer.writerows(E)
     print(filepath)
 
+def clear_zeros(mitrix):
+    # delete t with all zeros
+    all_zero_columns = np.where(~mitrix.any(axis=0))[0]
+    res = np.delete(mitrix, all_zero_columns, axis=1)
+    print("clear 0:")
+    print(res)
+
+    return res
+
+
 # 1.1 & 1.4
 def get_E(features, spreading, subT):
     r_matrix = get_r_matrix(features, spreading, subT)
@@ -228,6 +239,7 @@ def get_E(features, spreading, subT):
     pool = multiprocessing.Pool(processes=cores)
 
     spreading = np.delete(spreading, -1, axis=0)
+    # spreading = clear_zeros(spreading)
 
     print("spreading.shape:", spreading.shape)
     np.savetxt(save_path + 'to_file_spreading_' + rundate + ".txt", spreading)
@@ -258,6 +270,9 @@ if __name__ == '__main__':
 
     # 1. given classified texts
     # and two sets of observation samples at different times(T1,T2)
+    clean_data_obj = Clean_data(save_path, K)
+    tweet, user_info = clean_data_obj.init_classification()
+
     feature_sample, spreading_sample, T1, T2 = read_data(save_path + 'input.csv', K, days, sample_size)
 
     while (True):
@@ -275,6 +290,10 @@ if __name__ == '__main__':
             break
 
         # 4. update text classifications
+        print("update classification...")
+        tweet = clean_data_obj.update_classification(save_path + "text_embeddings.txt", tweet)
+        clean_data_obj.output(tweet, user_info)
+        print("update classification done")
         break
 
     # 5. output results

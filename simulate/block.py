@@ -182,6 +182,9 @@ def sample_net(val_hidden,nodes,block_dim,evl):
 	hidden_network=network_func(evl,val_hidden,nodes)
 	#net2=generate_network(nodes,hidden_network)
 	return net2
+
+
+# here is net_fun
 @jit
 def norm_net(val_hidden,nodes,block_dim):
 	net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])

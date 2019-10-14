@@ -36,7 +36,7 @@ class network_estimation:
 			iter_fun=normal_model
 			val_hidden=val_hidden
 			coef=array([])
-		elif model_type==2:#normal model with values at all nodes
+		elif model_type==2:#  normal model with values at all nodes
 			net_fun=norm_net
 			iter_fun=normal_model
 			val_hidden=val_hidden
@@ -72,6 +72,9 @@ class network_estimation:
 			else:
 				net1=ones((nodes.shape[0],nodes.shape[0]))
 			if hidden_network_fun is not None:
+				"""
+				下面两行代码，根据文件是否存在，注释掉不同的地方
+				"""
 				net2=generate_network(nodes,hidden_network_fun)
 				#net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
 			else:
@@ -88,8 +91,8 @@ class network_estimation:
 		while t<len(time_line):
 			#print 'simulation ',t,'-th run'
 			current=solutions[-1]
-			delta=iter_fun(net1,coef,nodes,covariates,current)
-			convert_rate=exp(-delta*dt)
+			delta=iter_fun(net1,coef,nodes,covariates,current) # 这里
+			convert_rate=exp(-delta*dt) # 感染概率
 			rand_num=random.rand(len(current))
 			solutions.append(current+(rand_num>convert_rate).astype(int)*(current==0).astype(int))
 			t+=1
