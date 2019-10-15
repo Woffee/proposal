@@ -12,9 +12,10 @@ import datetime
 from scipy.stats import norm
 from block import *
 from numba import jit
+import numpy as np
 
 class network_estimation:
-	def __init__(self,time,dt,nodes,val_hidden,trails=500,band_power=0.4):
+	def __init__(self,time,dt,nodes,val_hidden,trails=500,band_power=0.4, K=2):
 		# NOTE: initialize a coup of parameters        
 		self.time=time # upper bound of simulation interval
 		self.dt=dt #simulation time interval
@@ -28,6 +29,7 @@ class network_estimation:
 		self.net1=None   #composite network
 		self.net11=None  #observable network
 		self.band_power=band_power  #kernel bandwidth
+		self.K = K
 	            
 	def simulation(self,val_hidden,nodes,initial,time,dt,block_dim,covariates,model_type,net1=None,net2=None,true_net=True,hidden_network_fun=None):
 		# NOTE: only applicable to simulation study, simulate the spreading process and generate the time sequence of 0-1 vector of infected status from the given mean-field model
@@ -70,10 +72,12 @@ class network_estimation:
 				basic_network=network_func(nodes,edges,nodes)
 				net1=basic_network#generate_network(nodes,basic_network)
 			else:
+				# here
 				net1=ones((nodes.shape[0],nodes.shape[0]))
 			if hidden_network_fun is not None:
 				"""
 				下面两行代码，根据文件是否存在，注释掉不同的地方
+				hidden_network_fun == val_hidden
 				"""
 				net2=generate_network(nodes,hidden_network_fun)
 				#net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
@@ -83,7 +87,7 @@ class network_estimation:
 			self.net2=net2
 			net1*=net2
 			self.net1=net1
-		print(net1.shape)
+		print("net1:", net1.shape) # 600x600，就是simulation那个nodes
 		time_line=append(zeros(1),cumsum(dt*ones(int(time/dt))))
 		solutions=[initial]
 		t=1
@@ -91,11 +95,17 @@ class network_estimation:
 		while t<len(time_line):
 			#print 'simulation ',t,'-th run'
 			current=solutions[-1]
-			delta=iter_fun(net1,coef,nodes,covariates,current) # 这里
+			# print(current)
+			delta=iter_fun(net1,coef,nodes,covariates,current)
 			convert_rate=exp(-delta*dt) # 感染概率
 			rand_num=random.rand(len(current))
-			solutions.append(current+(rand_num>convert_rate).astype(int)*(current==0).astype(int))
+			solutions.append(current+(rand_num>convert_rate).astype(int))
 			t+=1
+
+		solutions = np.array(solutions).reshape((len(time_line)*self.K, int(net1.shape[0]/self.K) ))
+		print("solutions:", solutions.shape)
+		print(solutions)
+
 		return solutions,time_line
 
 	def minimizer(self,func,v0,iter_num,method1=True):
