@@ -21,10 +21,10 @@ filepath = save_path + 'true_net_1000x300.csv'
 
 K=2
 description = '2000x300'
-nodes_num = 300 * K
+nodes_num = 100 * K
 node_dim = 2
-time = 10
-dt = 0.01
+time = 5
+dt = 0.05
 if os.path.exists(filepath) and False:
     file_net = pd.read_csv(filepath)
     nodes = file_net[['node1_x', 'node1_y']].iloc[range(nodes_num)].values
@@ -46,7 +46,7 @@ evl = array(evl)
 hidden_net = []
 initial = zeros(nodes_num)
 for i in range(0, 50):  # 初始感染前50个节点
-    initial[i] = 1
+    initial[i*4] = 1
 
 network = network_estimation(time, dt, nodes, val_hidden, trails=2000, band_power=1. / float(node_dim + 1), K=K)
 solutions, time_line = network.simulation(val_hidden, nodes, initial, time, dt, 0, array([[]]), 2, net1=None, net2=None,

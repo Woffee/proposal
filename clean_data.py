@@ -13,6 +13,7 @@ import pickle
 import os
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.cluster import KMeans
+import logging
 
 class Clean_data():
     def __init__(self, save_path, K):

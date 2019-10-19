@@ -18,6 +18,7 @@ from scipy.optimize import nnls
 from scipy.stats import chi
 import random
 from clean_data import Clean_data
+import logging
 
 # calculate error in 1.5
 def get_min_error(E1, E2, n, k, t):
@@ -157,10 +158,12 @@ def read_data(filepath, K, days, sample_size = 100):
     random.shuffle(exist)
     T1 = sorted(exist[0:int(len(exist)/2)])
     T2 = sorted(exist[int(len(exist)/2):])
-    print(len(spreading_sample))
-    print(exist)
+
     print(T1)
     print(T2)
+    print("feature_sample:",feature_sample.shape)
+    print("spreading_sample:",spreading_sample.shape)
+
 
     # np.savetxt(save_path + 'to_file_spreading_sample_all' + rundate + ".txt", spreading_sample)
     # np.savetxt(save_path + 'to_file_spreading_sample_sub' + rundate + ".txt", spreading_sample[T1])
@@ -173,25 +176,94 @@ def read_data(filepath, K, days, sample_size = 100):
 
     return feature_sample, spreading_sample, T1, T2
 
+def read_data_from_simulation(obs_filepath, true_net_filepath, K, days, sample_size = 100):
+    data = pd.read_csv(true_net_filepath, encoding='utf-8')
+
+    ## get the features of nodes ##
+    feature_sample = data[['node1_x', 'node1_y']]
+    # real_edge = data[['net_hidden']]
+
+    random.seed(1)
+    feature_sample.index = data.index
+    ## rescale features to a compact cube ##
+    feature_max = []
+    for item in feature_sample.columns:
+        feature_max.append(max(np.absolute(np.array(feature_sample[item]))))
+        feature_sample[item] /= max(np.absolute(np.array(feature_sample[item])))
+    ## define infect event and get 0-1 infection status sequence ##
+
+    # draw subsample nodes and spreading info on these nodes
+    # data_sample=random.choice(data.index,size=3)
+    data_sample = range(0, sample_size)
+    features = feature_sample.iloc[list(data_sample)]
+    features.index = np.arange(len(data_sample))
+
+    spreading_sample = pd.read_csv(obs_filepath, encoding='utf-8')
+    spreading_sample.drop('user_id', axis=1, inplace=True)
+    spreading = spreading_sample.values
+
+    spreading_sample = np.array(spreading_sample)
+
+
+    obs = spreading[::10] # [开始：结束：步长]
+    print(obs.shape) # (101, 600)
+    # features_matirx = features.values
+
+    index = range(len(spreading_sample))
+    deleted = []
+    for i in range(len(spreading_sample)):
+        if i > 0:
+            last = spreading_sample[i - 1]
+            now = spreading_sample[i]
+            if (last == now).all():
+                deleted.append(i)
+    print("deleted:", deleted)
+    exist = list(set(index).difference(set(deleted)))
+
+    random.shuffle(exist)
+    T1 = sorted(exist[0:int(len(exist) / 2)])
+    T2 = sorted(exist[int(len(exist) / 2):])
+
+    print(T1)
+    print(T2)
+    print("features_matirx:",features.shape)
+    print("spreading_sample:",spreading_sample.shape)
+    return features, spreading_sample, T1, T2
+
+
 # 1.1 & 1.3
-def get_r_xit(x, i, t_l, features, spreading, K, T, bandwidth):
+def get_r_xit(x, i, t_l, features, spreading, K, T, bandwidth, dt):
     numerator = 0.0
     denominator = 0.0
-
+    # print(features.shape)
     for j in range(features.shape[0]):
         x_j = features.iloc[j]
         g = gaussiankernel(x, x_j, bandwidth, features.shape[1])
+        # print("j,t_l,j*K+i:",j,t_l,j*K+i)
         tmp = spreading[t_l+1][j*K+i] - spreading[t_l][j*K+i]
-        numerator = numerator + (g*tmp)
+        # if tmp>0:
+        #     print("1.0*g*tmp",1.0*g*tmp)
+        numerator = numerator + (1.0*g*tmp)
+
         denominator = denominator + (g*(T[t_l+1]-T[t_l]))
         # print("tmp:",tmp)
         # print("T[t_l+1]:", T[t_l+1])
+    # print("numerator", numerator)
+    # if numerator == 0.0:
+    #     print("00.00")
+    #     print("x:", x)
+    #     print("i:", i)
+    #     print("t_l:", t_l)
+    #     print("T[t_l]:", T[t_l])
+    #     print(spreading[t_l])
+    #     print(spreading[t_l+1])
+    #     exit(0)
     # print("numerator:", numerator)
     # print("denominator:", denominator)
     return numerator/denominator
 
 
-def get_r_matrix(features, spreading, T, K=2):
+def get_r_matrix(features, spreading, T, K=2, dt=0.01):
     # print(features.shape)
     # print(spreading.shape)
     # (60, 5)
@@ -200,12 +272,14 @@ def get_r_matrix(features, spreading, T, K=2):
 
     r_matrix = []
     for x in range(features.shape[0]):
+        print("get_r_matrix now x:",x)
         for i in range(K):
             row = []
             for t in range(len(T)-1):
-                r_xit = get_r_xit(features.iloc[x], i, t, features, spreading, K, T, bandwidth)
+                r_xit = get_r_xit(features.iloc[x], i, t, features, spreading, K, T, bandwidth, dt)
                 row.append(r_xit)
             r_matrix.append(row)
+            print(row)
 
     return np.array(r_matrix)
 
@@ -229,8 +303,8 @@ def clear_zeros(mitrix):
 
 
 # 1.1 & 1.4
-def get_E(features, spreading, subT):
-    r_matrix = get_r_matrix(features, spreading, subT)
+def get_E(features, spreading, subT, K, dt=0.01):
+    r_matrix = get_r_matrix(features, spreading, subT, K, dt)
     # print(rxt_matrix1)
     print("r_matrix: ", r_matrix.shape)
     np.savetxt(save_path + 'to_file_r_matrix_' + rundate + ".txt", r_matrix)
@@ -263,22 +337,32 @@ if __name__ == '__main__':
     save_path = BASE_DIR + '/data/'
     rundate = time.strftime("%m%d%H%M", time.localtime())
     # to_file = save_path + "to_file_" + rundate + ".csv"
+    today = time.strftime("%Y-%m-%d", time.localtime())
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)s %(filename)s line: %(lineno)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        filename=BASE_DIR + '/log/' + today + '.log')
 
     K = 2
+    dt = 0.05
     days = 32
     sample_size = 100
 
+    obs_filepath = save_path+'/simulation/obs_2000x300.csv'
+    true_net_filepath = save_path+'/simulation/true_net_2000x300.csv'
+    feature_sample, spreading_sample, T1, T2 = read_data_from_simulation(obs_filepath, true_net_filepath, K, days, sample_size=100)
+
     # 1. given classified texts
     # and two sets of observation samples at different times(T1,T2)
-    clean_data_obj = Clean_data(save_path, K)
-    tweet, user_info = clean_data_obj.init_classification()
+    # clean_data_obj = Clean_data(save_path, K)
+    # tweet, user_info = clean_data_obj.init_classification()
 
-    feature_sample, spreading_sample, T1, T2 = read_data(save_path + 'input.csv', K, days, sample_size)
+    # feature_sample, spreading_sample, T1, T2 = read_data(save_path + 'input.csv', K, days, sample_size)
 
     while (True):
         # 2. calculate E1 and E2
-        E1 = get_E(feature_sample, spreading_sample[T1], T1)
-        E2 = get_E(feature_sample, spreading_sample[T2], T2)
+        E1 = get_E(feature_sample, spreading_sample[T1], T1, K, dt)
+        E2 = get_E(feature_sample, spreading_sample[T2], T2, K, dt)
         save_E(E1, save_path + "to_file_1_" + rundate + ".csv")
         save_E(E2, save_path + "to_file_2_" + rundate + ".csv")
 
@@ -290,10 +374,10 @@ if __name__ == '__main__':
             break
 
         # 4. update text classifications
-        print("update classification...")
-        tweet = clean_data_obj.update_classification(save_path + "text_embeddings.txt", tweet)
-        clean_data_obj.output(tweet, user_info)
-        print("update classification done")
+        # print("update classification...")
+        # tweet = clean_data_obj.update_classification(save_path + "text_embeddings.txt", tweet)
+        # clean_data_obj.output(tweet, user_info)
+        # print("update classification done")
         break
 
     # 5. output results

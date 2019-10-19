@@ -124,7 +124,9 @@ def meanfield(mf):
     return res
 
 def get_edge_list(rxt_matrix, pool):
-    print(rxt_matrix.shape)
+    # print(rxt_matrix.shape)
+    # (32, 120)
+
     # construct all overline_r(x,t)
     overline_r_all = exp(1 - rxt_matrix.T)
 
@@ -139,6 +141,8 @@ def get_edge_list(rxt_matrix, pool):
     overline_r_all2_splite = overline_r_all2_add[:, 1:]
     diff_x_all = overline_r_all2_splite - overline_r_all
     print("diff_x_all:", diff_x_all.shape)
+    # diff_x_all: (120, 32)
+
 
     # zero_row_ids = []
     # nonezero_row_ids = []
@@ -161,6 +165,11 @@ def get_edge_list(rxt_matrix, pool):
     for xit in diff_x_all:
         xit_matrix = []
         xit_matrix.append(xit)  # y
+        # print("xit:",len(xit))
+        # print("rxt_matrix:",rxt_matrix.shape)
+        # xit: 32
+        # rxt_matrix: (32, 120)
+
         # xit_matrix.append(D)
         xit_matrix.append(rxt_matrix) # D
         xit_all.append(xit_matrix)
@@ -214,7 +223,7 @@ if __name__ == '__main__':
     ## define infect event and get 0-1 infection status sequence ##
 
     date_list = [20170811 + i for i in range(21)] + [20170901 + i for i in range(11)]
-    K = 3
+    K = 2
     spreading_key = []
     for k in range(K):
         for d, date in enumerate(date_list):
@@ -231,7 +240,7 @@ if __name__ == '__main__':
 
     sample_size = 60
     data_sample = range(0, sample_size)
-    spreading_sample = spreading_sample.reshape( (sample_size * K, len(date_list)) )
+    # spreading_sample = spreading_sample.reshape( (sample_size * K, len(date_list)) )
 
     # spreading1 = ones_like(spreading_sample)
     # spreading1[spreading_sample < 1] = 0
@@ -249,7 +258,7 @@ if __name__ == '__main__':
     features = feature_sample.iloc[list(data_sample)]
     features.index = arange(len(data_sample))
     spreading = spreading_sample[list(data_sample)]
-    # spreading = spreading.reshape( (sample_size * K, len(date_list)) )
+    spreading = spreading.reshape( (sample_size * K, len(date_list)) )
 
 
 

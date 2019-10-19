@@ -84,6 +84,8 @@ class network_estimation:
 			else:
 				print('bug here hidden_network_fun')
 				net2=net_fun(val_hidden,nodes,block_dim)
+
+			print("net2:", net2.shape)
 			self.net2=net2
 			net1*=net2
 			self.net1=net1
@@ -102,7 +104,8 @@ class network_estimation:
 			solutions.append(current+(rand_num>convert_rate).astype(int))
 			t+=1
 
-		solutions = np.array(solutions).reshape((len(time_line)*self.K, int(net1.shape[0]/self.K) ))
+		# solutions = np.array(solutions).reshape((len(time_line)*self.K, int(net1.shape[0]/self.K) ))
+		solutions = np.array(solutions).astype(int)
 		print("solutions:", solutions.shape)
 		print(solutions)
 
