@@ -119,24 +119,61 @@ class Clean_data():
             km = KMeans(n_clusters= self.K).fit(X)
             pickle.dump(km, open(kmeans_path, "wb"))
 
-        print("saving text to embeddings...")
-        output_file = self.save_path + "text_embeddings.txt"
-        output = open(output_file, "w")
+        # print("saving text to embeddings...")
+        # output_file = self.save_path + "text_embeddings.txt"
+        # output = open(output_file, "w")
         i = 0
+        vectors = []
         for d in test_docs:
             label = str(km.labels_[i])
-            output.write(label + "," + (" ".join([str(x) for x in model.infer_vector(d)]) + "\n"))
+            vec = model.infer_vector(d)
+            # output.write(label + "," + (" ".join([str(x) for x in vec]) + "\n"))
+            vectors.append(vec)
             i = i + 1
-        output.flush()
-        output.close()
+        # output.flush()
+        # output.close()
 
+        tweet['vector'] = vectors
         tweet['text_label'] = km.labels_
         self.centers = km.cluster_centers_
 
         print("km.labels:")
         print(km.labels_[0:30])
-        return tweet
 
+        return tweet[['user_id','text_label','CREATED_AT','vector']]
+
+    def get_obs(self, vlc):
+        for k in range(self.K):
+            for d, date in enumerate(self.date_list):
+                vlc['k_' + str(k) + '_d_' + str(d)] = 0
+
+        df2 = None
+        for k in range(self.K):
+            tmp = vlc[vlc['text_label'] == k]
+            for d, date in enumerate(self.date_list):
+                tmp['k_' + str(k) + '_d_' + str(d)] = 0
+                tmp['k_' + str(k) + '_d_' + str(d)][tmp['CREATED_AT'] <= date] = 1
+            if k == 0:
+                df2 = tmp
+            else:
+                df2 = pd.concat([df2, tmp])
+
+        key = ['user_id']
+        for k in range(self.K):
+            for d, date in enumerate(self.date_list):
+                key.append('k_' + str(k) + '_d_' + str(d))
+
+        # df2[df2['FROM_USER']=='LuncefordLee'][key]
+        # df2.head(20)[key]
+
+        print(len(df2))
+        df3 = df2[key].groupby('user_id', as_index=False).agg(sum)
+
+        # delete = []
+        # print(df3[ (df3['k_0_d_31']==0) & (df3['k_1_d_31']==0) ])
+        # exit(0)
+
+        return df3
 
     def output(self, tweet, user_info):
         # for k in range(K):
@@ -184,28 +221,7 @@ class Clean_data():
         input_data.to_csv(self.save_path + 'input.csv', index=False, encoding='utf-8')
 
     # =====================================
-    def fi(self, df, centers, l):
-        c = centers[l]
-        nodes = df[df['label'] == l]['vector']
-        s = 0
-        for n in nodes:
-            x = np.array(n, dtype=float)
-            s = s + np.sum((x - c) ** 2)
-        return s
 
-    def fi2(self, x, centers, origin, des):
-        c1 = centers[origin]
-        c2 = centers[des]
-        s1 = np.sum((x - c1) ** 2)
-        s2 = np.sum((x - c2) ** 2)
-        return s2 < s1
-
-    def getC(self, df, centers):
-        C = []
-
-        for l in range(self.K):
-            C.append(self.fi(df, centers, l))
-        return C
 
     def switching3(self, df, centers, C):
         # 计算每个点到中心的距离矩阵
@@ -243,9 +259,9 @@ class Clean_data():
 
             print(id_, origin, des)
 
-            if self.fi2(df.iloc[id_]['vector'], centers, origin, des):
-                print('updated')
-                df.set_value(id_, 'label', des)
+            # if self.fi2(df.iloc[id_]['vector'], centers, origin, des):
+            #     print('updated')
+            #     df.set_value(id_, 'label', des)
 
         #         print 'cc=',cc
         #         if cc < C[des]:
@@ -257,32 +273,35 @@ class Clean_data():
         #             print 'reverted'
         return df
 
-    def update_classification(self, embedding_path, tweet):
-        labels = []
-        vectors = []
-        with open(embedding_path, "r") as file:
-            i = 0
-            for line in file:
-                arr = line.split(',', 1)
-                label = int(arr[0])
-                labels.append(label)
-                vec = list(map(float, arr[1].strip().split(' ')))
-                vectors.append(vec)
+    # def update_classification(self, embedding_path, tweet):
+    #     labels = []
+    #     vectors = []
+    #     with open(embedding_path, "r") as file:
+    #         i = 0
+    #         for line in file:
+    #             arr = line.split(',', 1)
+    #             label = int(arr[0])
+    #             labels.append(label)
+    #             vec = list(map(float, arr[1].strip().split(' ')))
+    #             vectors.append(vec)
+    #
+    #     df = pd.DataFrame({
+    #         'label': labels,
+    #         'vector': vectors
+    #     })
+    #
+    #     df = self.switching3(df, self.centers, [])
+    #
+    #     tweet['text_label'] = df['label']
+    #     return tweet
 
-        df = pd.DataFrame({
-            'label': labels,
-            'vector': vectors
-        })
-
-        df = self.switching3(df, self.centers, [])
-
-        tweet['text_label'] = df['label']
-        return tweet
 
 
     def init_classification(self):
         tweet, user_info = self.read_data_from_xls(self.save_path)
-        tweet = self.tweet2vec(tweet)
+
+        vlc = self.tweet2vec(tweet)
+
         self.output(tweet, user_info)
         # print("done")
         return tweet, user_info
@@ -295,4 +314,5 @@ if __name__ == '__main__':
 
     clean_data = Clean_data(save_path, K=3)
     clean_data.init_classification()
-    clean_data.update_classification(save_path + "text_embeddings.txt", {})
+
+    # clean_data.update_classification(save_path + "text_embeddings.txt", {})
