@@ -14,9 +14,11 @@ import os
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.cluster import KMeans
 import logging
+import queue
 
 class Clean_data():
     def __init__(self, save_path, K):
+        np.random.seed(1)
         self.date_list = [20170811 + i for i in range(21)] + [20170901 + i for i in range(11)]
         self.K = K
         self.save_path = save_path
@@ -223,55 +225,55 @@ class Clean_data():
     # =====================================
 
 
-    def switching3(self, df, centers, C):
-        # 计算每个点到中心的距离矩阵
-        print("Calculating dm...")
-        dm = np.zeros((len(df), len(centers)), dtype=float)
-
-        for i in range(len(df)):
-            for j in range(len(centers)):
-                tmp = (df.iloc[i]['vector'] - centers[j]) ** 2
-                dm[i, j] = tmp.sum()
-
-        print("Getting order...")
-        order = []
-
-        for ji in range(self.K):
-            set_i = df[df['label'] == ji].index
-            for j in range(self.K):
-                if j == ji:
-                    continue
-                for i in set_i:
-                    # print(dm[i,j])
-                    # print(dm[i, ji])
-                    if dm[i, j] < dm[i, ji]:
-                        order.append([i, ji, j, dm[i, j]])
-
-        print('len of order: ', len(order))
-        print('Sorting order...')
-        order.sort(key=lambda x: x[3])
-
-        i = 0
-        for item in order:
-            origin = item[1]
-            des = item[2]
-            id_ = item[0]
-
-            print(id_, origin, des)
-
-            # if self.fi2(df.iloc[id_]['vector'], centers, origin, des):
-            #     print('updated')
-            #     df.set_value(id_, 'label', des)
-
-        #         print 'cc=',cc
-        #         if cc < C[des]:
-        #             # reset cli = fi()
-        #             C[des] = cc
-        #             print 'updated'
-        #         else:
-        #             df.set_value(id_,'label', origin)
-        #             print 'reverted'
-        return df
+    # def switching3(self, df, centers, C):
+    #     # 计算每个点到中心的距离矩阵
+    #     print("Calculating dm...")
+    #     dm = np.zeros((len(df), len(centers)), dtype=float)
+    #
+    #     for i in range(len(df)):
+    #         for j in range(len(centers)):
+    #             tmp = (df.iloc[i]['vector'] - centers[j]) ** 2
+    #             dm[i, j] = tmp.sum()
+    #
+    #     print("Getting order...")
+    #     order = []
+    #
+    #     for ji in range(self.K):
+    #         set_i = df[df['label'] == ji].index
+    #         for j in range(self.K):
+    #             if j == ji:
+    #                 continue
+    #             for i in set_i:
+    #                 # print(dm[i,j])
+    #                 # print(dm[i, ji])
+    #                 if dm[i, j] < dm[i, ji]:
+    #                     order.append([i, ji, j, dm[i, j]])
+    #
+    #     print('len of order: ', len(order))
+    #     print('Sorting order...')
+    #     order.sort(key=lambda x: x[3])
+    #
+    #     i = 0
+    #     for item in order:
+    #         origin = item[1]
+    #         des = item[2]
+    #         id_ = item[0]
+    #
+    #         print(id_, origin, des)
+    #
+    #         # if self.fi2(df.iloc[id_]['vector'], centers, origin, des):
+    #         #     print('updated')
+    #         #     df.set_value(id_, 'label', des)
+    #
+    #     #         print 'cc=',cc
+    #     #         if cc < C[des]:
+    #     #             # reset cli = fi()
+    #     #             C[des] = cc
+    #     #             print 'updated'
+    #     #         else:
+    #     #             df.set_value(id_,'label', origin)
+    #     #             print 'reverted'
+    #     return df
 
     # def update_classification(self, embedding_path, tweet):
     #     labels = []
@@ -294,6 +296,59 @@ class Clean_data():
     #
     #     tweet['text_label'] = df['label']
     #     return tweet
+
+    def get_vectors(self, n_nodes, mean=0, std=1):
+        dim = 50 # dimension of text
+        arr = std * np.random.randn(n_nodes, dim) + mean
+        mi = np.min(arr)
+        ma = np.max(arr)
+        for i in range(n_nodes):
+            for j in range(dim):
+                arr[i][j] = (arr[i][j] - mi) / (ma - mi)
+        # print(arr[0])
+        # print(np.mean(arr, axis=0))
+        # print(np.std(arr, axis=0))
+        return arr
+
+    def obs2vlc(self, obs, K, sample_size):
+        n_vectors = sum(obs[-1])
+
+        std = [1, 1.2, 1.4]
+        mean = [0, 0.1, 0.2]
+
+        vector_queues = []
+        for k in range(K):
+            q = queue.Queue()
+            for vec in self.get_vectors(n_vectors, mean[k], std[k]):
+                q.put(vec)
+            vector_queues.append(q)
+
+        t = 0
+        # vlc: ['user_id','vector','label','CREATED_AT']
+        vlc = []
+        X = []
+        print("vlc....")
+        for row in obs:
+            # print("vlc:",t)
+            for i in range(len(row)):
+                k = int(i/sample_size)
+                if t==0:
+                    num = row[i]
+                else:
+                    num = obs[t, i] - obs[t-1, i]
+                # print("num",num)
+                for j in range(num):
+                    vec = vector_queues[k].get()
+                    X.append(vec)
+                    vlc.append( [i%sample_size, vec, k, t ] )
+
+            t = t+1
+
+        km = KMeans(n_clusters=self.K).fit(X)
+        self.centers = km.cluster_centers_
+
+        df = pd.DataFrame(vlc, columns = ['user_id','vector','label','CREATED_AT'])
+        return df
 
 
 

@@ -79,8 +79,8 @@ class network_estimation:
 				下面两行代码，根据文件是否存在，注释掉不同的地方
 				hidden_network_fun == val_hidden
 				"""
-				net2=generate_network(nodes,hidden_network_fun)
-				#net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
+				# net2=generate_network(nodes,hidden_network_fun)
+				net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
 			else:
 				print('bug here hidden_network_fun')
 				net2=net_fun(val_hidden,nodes,block_dim)

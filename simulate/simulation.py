@@ -20,12 +20,12 @@ save_path = BASE_DIR + '/../data/simulation/'
 filepath = save_path + 'true_net_1000x300.csv'
 
 K=2
-description = '2000x300'
+description = 'net_hidden'
 nodes_num = 100 * K
 node_dim = 2
 time = 5
 dt = 0.05
-if os.path.exists(filepath) and False:
+if os.path.exists(filepath):
     file_net = pd.read_csv(filepath)
     nodes = file_net[['node1_x', 'node1_y']].iloc[range(nodes_num)].values
     val_hidden = file_net[description].values
@@ -62,9 +62,9 @@ true_net['net_hidden'] = network.net2.flatten()
 
 net_hidden = array(true_net['net_hidden']).reshape(nodes_num, nodes_num)
 
-if os.path.exists(filepath) and False:
+if os.path.exists(filepath):
     # pd.DataFrame(obs_t).to_csv(save_path + 'obst_1000x300_' + description + '_re' + '.csv')  # 这个没用了
-    pd.DataFrame(obs).to_csv(save_path + 'obs_000x300_' + description + '_re' + '.csv')
+    pd.DataFrame(obs).to_csv(save_path + 'obs_1000x300_' + description + '_re' + '.csv')
     true_net.to_csv(save_path + 'true_net_1000x300_' + description + '_re' + '.csv')
 else:
     # pd.DataFrame(obs_t).to_csv(save_path + 'obst_' + description + '.csv')
