@@ -1,5 +1,5 @@
 """
-
+Version 3，暂时不考虑迭代，假设分类已知，写一篇段文章出来
 """
 
 import pandas as pd
@@ -62,9 +62,9 @@ def lasso(x,D,y):
 
 
 def lessObsUpConstrain(x,D,y):
-    print("x.shape:",x.shape)
-    print("D.shape:",D.shape)
-    print("y.shape:",y.shape)
+    # print("x.shape:",x.shape)
+    # print("D.shape:",D.shape)
+    # print("y.shape:",y.shape)
     temp = (np.dot(D,x))/D.shape[1] - y
     eq = np.dot(temp,temp)
     return -eq+0.1

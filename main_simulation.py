@@ -1,5 +1,5 @@
 """
-Version 1，使用的是真实Twitter数据
+Version 2，使用模拟数据进行迭代
 """
 
 import pandas as pd
@@ -281,6 +281,43 @@ def read_data3(user_info, obs, K, sample_size):
 
     return features, spreading_sample, T1, T2
 
+def read_data4(vlc, K, sample_size, T):
+    spreading = np.zeros((T, sample_size*K))
+
+    # vlc: ['user_id','vector','label','CREATED_AT']
+    print("read_data...")
+    for i in range(0, len(vlc)):
+        row = vlc.iloc[i]
+        t = row['CREATED_AT']
+        xk = row['label']*sample_size + row['user_id']
+        spreading[t, xk] = spreading[t, xk] + 1
+    for i in range(len(spreading)):
+        if i>0:
+            spreading[i] = spreading[i] + spreading[i-1]
+
+    # np.savetxt(save_path + 'spreading.txt', spreading, fmt="%d")
+    index = range(len(spreading))
+    deleted = []
+    for i in range(len(spreading)):
+        if i > 0:
+            last = spreading[i - 1]
+            now = spreading[i]
+            if (last == now).all():
+                deleted.append(i)
+    print("deleted:", deleted)
+    exist = list(set(index).difference(set(deleted)))
+    # spreading_sample = np.delete(spreading_sample, deleted, axis=0)
+
+    random.shuffle(exist)
+    T1 = sorted(exist[0:int(len(exist) / 2)])
+    T2 = sorted(exist[int(len(exist) / 2):])
+
+    print(T1)
+    print(T2)
+    print("spreading_sample:", spreading.shape)
+
+    return spreading, T1, T2
+
 # 1.1 & 1.3
 def get_r_xit(x, i, t_l, features, spreading, K, T, bandwidth, dt):
     numerator = 0.0
@@ -400,17 +437,13 @@ if __name__ == '__main__':
 
     obs_filepath = save_path+'/simulation/obs_2000x300.csv'
     true_net_filepath = save_path+'/simulation/true_net_2000x300.csv'
-
-    clean_data_obj = Clean_data(save_path, K)
-    tweet, user_info = clean_data_obj.read_data_from_xls(save_path)
-    # vlc: ['user_id','vector','label','CREATED_AT']
-    vlc = clean_data_obj.tweet2vec(tweet)
-    # obs: user_id  k_0_d_0  k_0_d_1    ...     k_1_d_29  k_1_d_30  k_1_d_31
-    obs = clean_data_obj.get_obs(vlc)
-
     # 1. given classified texts
     # and two sets of observation samples at different times(T1,T2)
-    feature_sample, spreading_sample, T1, T2 = read_data3(user_info, obs, K, sample_size)
+    feature_sample, spreading_sample, T1, T2 = read_data2(obs_filepath, true_net_filepath, K, days, sample_size)
+
+    clean_data_obj = Clean_data(save_path, K)
+    # vlc: ['user_id','vector','label','CREATED_AT']
+    vlc = clean_data_obj.obs2vlc(spreading_sample, K, sample_size)
 
     # 2. calculate E1 and E2
     E1 = get_E(feature_sample, spreading_sample[T1], T1, K, dt)
@@ -423,15 +456,15 @@ if __name__ == '__main__':
 
     # 4. calculate distance matrix
     print("Calculating dm...")
-    dm = np.zeros((len(obs), len(clean_data_obj.centers)), dtype=float)
-    for i in range(len(obs)):
+    dm = np.zeros((len(vlc), len(clean_data_obj.centers)), dtype=float)
+    for i in range(len(vlc)):
         for j in range(len(clean_data_obj.centers)):
-            tmp = (obs.iloc[i]['vector'] - clean_data_obj.centers[j]) ** 2
+            tmp = (vlc.iloc[i]['vector'] - clean_data_obj.centers[j]) ** 2
             dm[i, j] = tmp.sum()
     print("Getting order...")
     order = []
     for ji in range(K):
-        set_i = obs[obs['text_label'] == ji].index
+        set_i = vlc[vlc['label'] == ji].index
         for j in range(K):
             if j == ji:
                 continue
@@ -444,25 +477,41 @@ if __name__ == '__main__':
     print('Sorting order...')
     order.sort(key=lambda x: x[3])
 
-    i = 0
+    ii = 0
+    logging.info("all:" + str(len(order)))
     for item in order:
+        logging.info("no."+str(ii))
         origin = item[1]
         des = item[2]
         id_ = item[0]
         print(id_, origin, des)
-        obs.set_value(id_, 'label', des)
+        vlc.set_value(id_, 'label', des)
 
         # 1. given classified texts
         # and two sets of observation samples at different times(T1,T2)
-        feature_sample, spreading_sample, T1, T2 = read_data3(user_info, obs, K, sample_size)
+        spreading_sample, T1, T2 = read_data4(vlc, K, sample_size, len(spreading_sample))
 
         # 2. calculate E1 and E2
         E1 = get_E(feature_sample, spreading_sample[T1], T1, K, dt)
         E2 = get_E(feature_sample, spreading_sample[T2], T2, K, dt)
 
         e = (np.sum((E1 - E2) ** 2))
+        logging.info("e:" + str(e) + ", min_e:" + str(min_e))
         if e < min_e:
+            logging.info("success")
             min_e = e
         else:
-            obs.set_value(id_, 'label', origin)
+            logging.info("withdraw")
+            vlc.set_value(id_, 'label', origin)
+        ii=ii+1
 
+
+
+
+
+
+
+
+
+
+# print(len(arr))
