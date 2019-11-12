@@ -77,7 +77,7 @@ def get_data(fp_obs, fp_true_net, K, num_nodes):
     true_net = pd.read_csv(fp_true_net, encoding='utf-8').dropna()
     obs      = pd.read_csv(fp_obs, encoding='utf-8').dropna().to_numpy()
     T = len(obs)
-    nodes = true_net[['node1_x', 'node1_y']].to_numpy()
+    nodes = true_net[['node1_x', 'node1_y']].drop_duplicates().to_numpy()
 
     data = []
     for i in range(num_nodes):
@@ -87,14 +87,17 @@ def get_data(fp_obs, fp_true_net, K, num_nodes):
             for k in range(K):
                 row.append( obs[t, i*K + k] )
             row.append(t)
-            print(row)
+            # print(row)
             data.append(row)
-    exit(0)
     return np.array(data)
 
 def get_accuracy2(fp_obs_o, fp_obs_e, fp_true_net_o, fp_true_net_e, K, num_nodes):
     data_o = get_data(fp_obs_o, fp_true_net_o, K, num_nodes)
     data_e = get_data(fp_obs_e, fp_true_net_e, K, num_nodes)
+
+    # data = pd.read_csv(fp_true_net_o, encoding='utf-8').dropna()
+    # nodes = data[['node1_x', 'node1_y']]
+    # nodes = nodes.drop_duplicates()
 
     x_near = []
     y_near = []
@@ -117,9 +120,6 @@ def get_accuracy2(fp_obs_o, fp_obs_e, fp_true_net_o, fp_true_net_e, K, num_nodes
             n1_near.append(n1near)
             n2_near.append(n2near)
             t_near.append(tnear)
-
-    data = pd.read_csv(fp_true_net_o, encoding='utf-8').dropna()
-    nodes = data[['node1_x', 'node1_y']]
 
     # x = nodes[['node1_x']].to_numpy().T.reshape(num_nodes * K, )
     # y = nodes[['node1_y']].to_numpy().T.reshape(num_nodes * K, )
@@ -149,8 +149,6 @@ def get_accuracy2(fp_obs_o, fp_obs_e, fp_true_net_o, fp_true_net_e, K, num_nodes
     print(accuracy_t)
 
     accuracy = (accuracy_x + accuracy_y + accuracy_n1 + accuracy_n2 + accuracy_t) / 5
-
-
     return accuracy
 
 
@@ -160,11 +158,11 @@ if __name__ == '__main__':
     K = 2
     num_nodes = 100
 
-    fp_obs_o = save_path+'obs_100x100x2_original.csv'
-    fp_obs_e = save_path+'obs_100x100x2_estimate_11071056.csv'
+    fp_obs_o = save_path+'obs_100x100_original.csv'
+    fp_obs_e = save_path+'obs_100x100_estimate_11121658.csv'
 
-    fp_true_net_o = save_path+'true_net_100x100x2_original.csv'
-    fp_treu_net_e = save_path+'true_net_100x100x2_estimate_11071056.csv'
+    fp_true_net_o = save_path+'true_net_100x100_original.csv'
+    fp_treu_net_e = save_path+'true_net_100x100_estimate_11121658.csv'
 
     # a1 = (get_accuracy1(save_path+'obs_100x100x2_original.csv',
     #                      save_path+'obs_100x100x2_estimate_11071056.csv',

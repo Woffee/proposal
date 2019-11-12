@@ -107,28 +107,15 @@ def read_data_from_simulation(obs_filepath, true_net_filepath, K, days, sample_s
 
     ## get the features of nodes ##
     feature_sample = data[['node1_x', 'node1_y']]
-    # real_edge = data[['net_hidden']]
-
-    random.seed(1)
-    feature_sample.index = data.index
-    ## rescale features to a compact cube ##
-    feature_max = []
-    for item in feature_sample.columns:
-        feature_max.append(max(np.absolute(np.array(feature_sample[item]))))
-        feature_sample[item] /= max(np.absolute(np.array(feature_sample[item])))
-
-    # draw subsample nodes and spreading info on these nodes
-    # data_sample=random.choice(data.index,size=3)
-    data_sample = range(0, sample_size)
-    features = feature_sample.iloc[list(data_sample)]
-    features.index = np.arange(len(data_sample))
+    features = feature_sample.drop_duplicates()
+    features.index = np.arange(sample_size)
 
     spreading_sample = pd.read_csv(obs_filepath, encoding='utf-8')
     # spreading_sample.drop('user_id', axis=1, inplace=True)
     # spreading_sample.drop([spreading_sample.columns[0]], axis=1, inplace=True)
     # spreading = spreading_sample.values
-
     spreading_sample = np.array(spreading_sample)
+
 
 
     # obs = spreading[::10] # [开始：结束：步长]
@@ -261,8 +248,8 @@ if __name__ == '__main__':
     days = 32
     sample_size = 100
 
-    obs_filepath = save_path+'/obs_net_hidden.csv'
-    true_net_filepath = save_path+'/true_net_net_hidden.csv'
+    obs_filepath = save_path+'obs_100x100_original.csv'
+    true_net_filepath = save_path+'true_net_100x100_original.csv'
     feature_sample, spreading_sample, T = read_data_from_simulation(obs_filepath, true_net_filepath, K, days, sample_size=100)
 
     logging.info("start")
