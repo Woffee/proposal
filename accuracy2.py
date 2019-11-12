@@ -56,7 +56,7 @@ def process_data(filepath_original, filepath_new, filepath_true_net):
 def get_accuracy1(filepath_o, filepath_e, K, num_nodes):
     original = pd.read_csv(filepath_o, encoding='utf-8').dropna().to_numpy()
     estimate = pd.read_csv(filepath_e, encoding='utf-8').dropna().to_numpy()
-
+    print(len(original), len(original[0]))
     s = 0
     for i in range(num_nodes):
         equal = True
@@ -164,10 +164,8 @@ if __name__ == '__main__':
     fp_true_net_o = save_path+'true_net_100x100_original.csv'
     fp_treu_net_e = save_path+'true_net_100x100_estimate_11121658.csv'
 
-    # a1 = (get_accuracy1(save_path+'obs_100x100x2_original.csv',
-    #                      save_path+'obs_100x100x2_estimate_11071056.csv',
-    #                      K, num_nodes))
-    # print("accuracy1:", a1)
+    a1 = (get_accuracy1(fp_obs_o, fp_obs_e, K, num_nodes))
+    print("accuracy1:", a1)
 
 
     a2 = get_accuracy2(fp_obs_o, fp_obs_e, fp_true_net_o, fp_treu_net_e, K, num_nodes)
