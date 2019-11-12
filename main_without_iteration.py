@@ -137,13 +137,13 @@ def read_data_from_simulation(obs_filepath, true_net_filepath, K, days, sample_s
 
     index = range(len(spreading_sample))
     deleted = []
-    for i in range(len(spreading_sample)):
-        if i > 0:
-            last = spreading_sample[i - 1]
-            now = spreading_sample[i]
-            if (last == now).all():
-                deleted.append(i)
-    print("deleted:", deleted)
+    # for i in range(len(spreading_sample)):
+    #     if i > 0:
+    #         last = spreading_sample[i - 1]
+    #         now = spreading_sample[i]
+    #         if (last == now).all():
+    #             deleted.append(i)
+    # print("deleted:", deleted)
     T = list(set(index).difference(set(deleted)))
     print(T)
     print("features_matirx:",features.shape)
@@ -205,10 +205,20 @@ def get_E(features, spreading, subT, K, dt=0.01):
     logging.info("dt:" + str(dt))
     print("dt:",dt)
     r_matrix = get_r_matrix(features, spreading, subT, K, dt)
+
+    sum_col = np.sum(r_matrix, axis=0)
+    deleted = []
+    for i in range(len(sum_col)):
+        if sum_col[i] == 0:
+            deleted.append([i])
+    r_matrix = np.delete(r_matrix, deleted, axis=1) # delete columns where all 0
+    logging.info("r_matrix_deleted:" + str(deleted))
+
     print("r_matrix: ", r_matrix.shape)
     logging.info("r_matrix.shape: " + str( r_matrix.shape))
 
-    spreading = spreading[subT, :]
+    # spreading = spreading[subT, :]
+    spreading = np.delete(spreading, deleted, axis=0)
     spreading = np.delete(spreading, -1, axis=0)
 
     logging.info("features.shape:" + str(features.shape))

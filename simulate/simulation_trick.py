@@ -76,11 +76,14 @@ class network_estimation:
 				net1=ones((nodes.shape[0],nodes.shape[0]))
 			if hidden_network_fun is not None:
 				"""
-				下面两行代码，根据文件是否存在，注释掉不同的地方
 				hidden_network_fun == val_hidden
 				"""
-				# net2=generate_network(nodes,hidden_network_fun)
-				net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
+				if callable(hidden_network_fun):
+					print("generate_network")
+					net2=generate_network(nodes,hidden_network_fun)
+				else:
+					net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
+					print(net2)
 			else:
 				print('bug here hidden_network_fun')
 				net2=net_fun(val_hidden,nodes,block_dim)
@@ -89,7 +92,7 @@ class network_estimation:
 			self.net2=net2
 			net1*=net2
 			self.net1=net1
-		print("net1:", net1.shape) # 600x600，就是simulation那个nodes
+		print("net1:", net1.shape) # 就是simulation那个nodes
 		time_line=append(zeros(1),cumsum(dt*ones(int(time/dt))))
 		solutions=[initial]
 		t=1
@@ -107,8 +110,6 @@ class network_estimation:
 		# solutions = np.array(solutions).reshape((len(time_line)*self.K, int(net1.shape[0]/self.K) ))
 		solutions = np.array(solutions).astype(int)
 		print("solutions:", solutions.shape)
-		print(solutions)
-
 		return solutions,time_line
 
 	def minimizer(self,func,v0,iter_num,method1=True):

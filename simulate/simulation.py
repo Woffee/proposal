@@ -13,14 +13,16 @@ from scipy.stats import chi2
 from block import *
 import sys
 import os
+import time
 
+rundate = time.strftime("%m%d%H%M", time.localtime())
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-save_path = BASE_DIR + '/../data/simulation/'
+save_path = BASE_DIR + '/../data/'
 
-filepath = save_path + 'true_net_1000x300.csv'
+filepath = save_path + 'to_file_true_net_11071053_re.csv'
 
 K=2
-description = 'net_hidden'
+description = 'e'
 nodes_num = 100 * K
 node_dim = 2
 time = 5
@@ -30,7 +32,7 @@ if os.path.exists(filepath):
     nodes = file_net[['node1_x', 'node1_y']].iloc[range(nodes_num)].values
     val_hidden = file_net[description].values
 else:
-    # 1. generate nodes，这里的点就是用户向量，只不过是二维
+    # 1. generate nodes
     nodes = random.rand(nodes_num, node_dim)
 
     val_hidden = lambda x: 1 - sqrt(sum((x[:node_dim] - x[node_dim:]) ** 2)) / sqrt(2.)
@@ -45,7 +47,7 @@ evl = array(evl)
 
 hidden_net = []
 initial = zeros(nodes_num)
-for i in range(0, 50):  # 初始感染前50个节点
+for i in range(0, 50):  # 初始感染节点
     initial[i*4] = 1
 
 network = network_estimation(time, dt, nodes, val_hidden, trails=2000, band_power=1. / float(node_dim + 1), K=K)
@@ -63,10 +65,14 @@ true_net['net_hidden'] = network.net2.flatten()
 net_hidden = array(true_net['net_hidden']).reshape(nodes_num, nodes_num)
 
 if os.path.exists(filepath):
-    # pd.DataFrame(obs_t).to_csv(save_path + 'obst_1000x300_' + description + '_re' + '.csv')  # 这个没用了
-    pd.DataFrame(obs).to_csv(save_path + 'obs_1000x300_' + description + '_re' + '.csv')
-    true_net.to_csv(save_path + 'true_net_1000x300_' + description + '_re' + '.csv')
+    # pd.DataFrame(obs_t).to_csv(save_path + 'obst_1000x300_' + description + '_re' + '.csv')
+    obs_filepath = save_path + 'obs_1000x300_' + description + '_re_' + rundate + '.csv'
+    true_net_filepath = save_path + 'true_net_1000x300_' + description + '_re_' + rundate + '.csv'
+    pd.DataFrame(obs).to_csv(obs_filepath, index=None)
+    true_net.to_csv(true_net_filepath, index=None)
+    print(obs_filepath)
+    print(true_net_filepath)
 else:
     # pd.DataFrame(obs_t).to_csv(save_path + 'obst_' + description + '.csv')
-    pd.DataFrame(obs).to_csv(save_path + 'obs_' + description + '.csv')
-    true_net.to_csv(save_path + 'true_net_' + description + '.csv')
+    pd.DataFrame(obs).to_csv(save_path + 'obs_' + description + '.csv', index=None)
+    true_net.to_csv(save_path + 'true_net_' + description + '.csv', index=None)
