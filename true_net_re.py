@@ -12,7 +12,7 @@ E_filepath = save_path + "to_file_E_11121605.csv"
 true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
 
 true_net = pd.read_csv(true_net_filepath, sep=',')
-true_net.drop([true_net.columns[0]], axis=1, inplace=True)
+# true_net.drop([true_net.columns[0]], axis=1, inplace=True)
 
 E = pd.read_csv(E_filepath, sep=',', header=None)
 
