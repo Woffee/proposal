@@ -212,7 +212,7 @@ class MiningHiddenLink:
 
         logging.info("features.shape:" + str(features.shape))
         logging.info("spreading.shape:" + str(spreading.shape))
-        logging.info("subT:" + str(subT))
+        # logging.info("subT:" + str(subT))
 
         # np.savetxt(save_path + 'to_file_spreading_' + rundate + ".txt", spreading)
         # np.savetxt(save_path + 'to_file_r_matrix_' + rundate + ".txt", r_matrix)
@@ -262,21 +262,20 @@ if __name__ == '__main__':
     dt = 0.05
 
     test = [
-        [100, 150],
-        [100, 200],
-        [100, 250],
-        [100, 300],
-        [100, 350],
-        [100, 400],
-        [100, 450],
-        [100, 500],
+        [200, 100],
+        [300, 100],
+        [400, 100],
+        [100, 80],
+        [200, 80],
+        [300, 80],
+        [400, 80],
     ]
     for nodes_num, obs_num in test:
         time = 1.0 * obs_num * dt
         print(nodes_num, obs_num, time)
         logging.info("start: " + str(nodes_num) + "x" + str(obs_num))
 
-        save_path = save_path + str(nodes_num) + "x" + str(obs_num)
+        save_path = BASE_DIR + '/data/' + str(nodes_num) + "x" + str(obs_num)
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         save_path = save_path + "/"
@@ -313,6 +312,6 @@ if __name__ == '__main__':
         a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
         print("accuracy1:", a1)
         print("accuracy2:", a2)
-        logging.info("step 5 accuracy1: " + str(a1))
-        logging.info("step 5 accuracy2: " + str(a2))
+        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
+        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
 
