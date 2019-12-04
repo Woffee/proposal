@@ -3,3 +3,5 @@
 *.bin
 to_file*.csv
 *.txt
+bak/
+*.*

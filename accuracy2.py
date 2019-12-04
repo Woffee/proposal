@@ -14,7 +14,7 @@ class accuracy:
 
     def find_near(self, obj, all):
         dist = self.distance(obj,all[0])
-        near = []
+        near = all[0]
         for line in all:
             d = self.distance(obj,line)
             if d < dist:
@@ -71,7 +71,7 @@ class accuracy:
             if equal:
                 # print("equal:", i)
                 s = s + 1
-        print("equals:", s)
+        print("equal:", s, ",all:",num_nodes)
         return 1.0*s/num_nodes
 
     def get_data(self, fp_obs, fp_true_net, K, num_nodes):
