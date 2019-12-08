@@ -3,15 +3,15 @@
 Created on Tue Sep 04 15:16:11 2018
 @author: zzxxq
 """
-from threading import Thread
-from queue import Queue
-from numpy import *
-import pandas as pd
-from multi_dim_kde import *
-import datetime
+# from threading import Thread
+# from queue import Queue
+# from numpy import *
+# import pandas as pd
+# from multi_dim_kde import *
+# import datetime
 from scipy.stats import norm
 from block import *
-from numba import jit
+# from numba import jit
 import numpy as np
 
 class network_estimation:

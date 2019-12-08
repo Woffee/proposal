@@ -5,13 +5,13 @@ Created on Aug Sep 04 17:22:43 2019
 @author: zxq
 """
 
-from numpy import *
+# from numpy import *
 import time as t_module
 import pandas as pd
 from simulation_trick import network_estimation
-from scipy.stats import chi2
+# from scipy.stats import chi2
 from block import *
-import sys
+# import sys
 import os
 
 class simulation:

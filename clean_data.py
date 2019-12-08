@@ -2,18 +2,18 @@
 # coding: utf-8
 
 
-from pandas import DataFrame, read_csv
+# from pandas import DataFrame, read_csv
 # import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import re
-import string
+# import string
 import gensim
 import pickle
 import os
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.cluster import KMeans
-import logging
+# import logging
 import queue
 
 class Clean_data():

@@ -1,19 +1,17 @@
 # coding=utf-8
-from sys import argv
-from os.path import exists
 import pandas as pd
 import multiprocessing
-import numpy as np
+# import numpy as np
 from numpy import *
 from numba import jit
 import csv
-import math
+
 import datetime
 import time
 # import cvxpy as cvx
-from scipy import sparse as sp
-from scipy.linalg import lstsq
-from scipy.linalg import solve
+# from scipy import sparse as sp
+# from scipy.linalg import lstsq
+# from scipy.linalg import solve
 from scipy.optimize import nnls
 import scipy
 import os

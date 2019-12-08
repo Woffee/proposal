@@ -3,25 +3,11 @@
 """
 
 import pandas as pd
-import multiprocessing
 import numpy as np
-
-from numba import jit
-import csv
-import math
-import datetime
 import time
-import scipy
 import os
-import math
-from scipy.optimize import nnls
-from scipy.stats import chi
-import random
-from clean_data import Clean_data
-from simulation import simulation
-from accuracy2 import accuracy
 import logging
-from accuracy2 import accuracy
+# from accuracy2 import accuracy
 
 def process(obs_filepath, new_filepath):
     data = pd.read_csv(obs_filepath, encoding='utf-8')

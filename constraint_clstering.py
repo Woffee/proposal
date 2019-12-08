@@ -3,16 +3,16 @@
 
 from numpy import *
 import pandas as pd
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-import datetime
-
-import matplotlib.pyplot as plt
+# import statsmodels.api as sm
+# import statsmodels.formula.api as smf
+# import datetime
+#
+# import matplotlib.pyplot as plt
 import numpy as np
-import gensim
+# import gensim
 import pickle
 import os
-import copy
+# import copy
 
 from scipy.spatial import distance_matrix
 
