@@ -11,11 +11,14 @@ import csv
 # import math
 # import datetime
 import time
-import scipy
+# import scipy
 import os
 import math
-from scipy.optimize import nnls
-from scipy.stats import chi
+# from scipy.optimize import nnls
+# from scipy.stats import chi
+from scipy.optimize import minimize
+from scipy.optimize import Bounds
+
 # import random
 # from clean_data import Clean_data
 from simulation import simulation
@@ -28,11 +31,11 @@ class MiningHiddenLink:
         self.save_path = save_path
 
     # calculate error in 1.5
-    def get_min_error(self, E1, E2, n, k, t):
-        df = (n*k)**2
-        tmp = (np.std(E1, dtype=np.float64) + np.std(E2,dtype=np.float64)) * 0.5
-        error = tmp**2 * chi.ppf(0.9, df) / t
-        return error
+    # def get_min_error(self, E1, E2, n, k, t):
+    #     df = (n*k)**2
+    #     tmp = (np.std(E1, dtype=np.float64) + np.std(E2,dtype=np.float64)) * 0.5
+    #     error = tmp**2 * scipy.stats.chi.ppf(0.9, df) / t
+    #     return error
 
 
     def is_constrained(self, E1, E2, min_error):
@@ -98,10 +101,10 @@ class MiningHiddenLink:
         if(D.shape[0] < D.shape[1]):
             #less observations than nodes
             upcons = {'type':'ineq','fun':self.lessObsUpConstrain,'args':(D,y)}
-            result = scipy.optimize.minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=scipy.optimize.Bounds(0,1), constraints=[upcons], tol=None, callback=None, options={'maxiter': 100, 'ftol': 1e-03, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-08})
+            result = minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=Bounds(0,1), constraints=[upcons], tol=None, callback=None, options={'maxiter': 100, 'ftol': 1e-03, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-08})
             print(result)
         else:
-            result = scipy.optimize.minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=scipy.optimize.Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
+            result = minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
             print(result)
         return result.x
 
