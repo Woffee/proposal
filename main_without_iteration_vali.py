@@ -1,5 +1,6 @@
 """
-Version 3，暂时不考虑迭代，假设分类已知
+Version 3.
+Test with known classifications. Ignore the iteration.
 """
 
 import pandas as pd
@@ -264,6 +265,7 @@ if __name__ == '__main__':
     time = 7.5
     dt = 0.05
 
+    # If you want to do more tests, just add parameters in this list.
     test = [
         [150, 130],
     ]
@@ -281,17 +283,17 @@ if __name__ == '__main__':
         mhl = MiningHiddenLink(save_path)
         ac = accuracy(save_path)
 
-        # 1
+        # 1 Generate simulation data
         obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, time, dt)
         logging.info("step 1: " + obs_filepath)
         logging.info("step 1: " + true_net_filepath)
 
-        # 2
+        # 2 Estimate the edge matrix E
 
         e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
         logging.info("step 2: " + e_filepath)
 
-        # 3
+        # 3 Process data files
         true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
         true_net = pd.read_csv(true_net_filepath, sep=',')
         hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
@@ -299,12 +301,12 @@ if __name__ == '__main__':
         true_net.to_csv(true_net_re_filepath, header=True, index=None)
         logging.info("step 3: " + true_net_re_filepath)
 
-        # 4
+        # 4 Estimate the observation data with E
         obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, time, dt, true_net_re_filepath)
         logging.info("step 4: " + obs_filepath_2)
         logging.info("step 4: " + true_net_filepath_2)
 
-        # 5
+        # 5 Assess accuracy
         a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
         a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
         print("accuracy1:", a1)
