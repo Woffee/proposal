@@ -25,6 +25,7 @@ from scipy.optimize import Bounds
 from simulation import simulation
 from accuracy2 import accuracy
 import logging
+from datetime import datetime
 
 
 class MiningHiddenLink:
@@ -288,11 +289,10 @@ if __name__ == '__main__':
 
         # 2 Estimate the edge matrix E
         logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
-        start_time = time.time()
+        current_time = datetime.now()
         e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
-        end_time = time.time()
         logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
-        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str(int(end_time-start_time)))
+        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
         logging.info("step 2: " + e_filepath)
 
         # 3 Process data files
