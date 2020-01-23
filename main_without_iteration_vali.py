@@ -101,11 +101,17 @@ class MiningHiddenLink:
         # print("D:", D.shape)
         # D: (15, 120)
         if(D.shape[0] < D.shape[1]):
-            #less observations than nodes
+            options = {'maxiter': 10, 'ftol': 1e-01, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
+            # less observations than nodes
+            # see https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html#optimize-minimize-slsqp
             upcons = {'type':'ineq','fun':self.lessObsUpConstrain,'args':(D,y)}
-            result = minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=Bounds(0,1), constraints=[upcons], tol=None, callback=None, options={'maxiter': 100, 'ftol': 1e-03, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-08})
-            # print(result)
+            cur_time = datetime.now()
+            result = minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=Bounds(0,1),
+                              constraints=[upcons], tol=None, callback=None, options=options)
+            logging.info("minimizer_L1 time:" + str( datetime.now() - cur_time ) + "," + str(options))
+            logging.info("minimizer_L1 result.x:[" + str(result.x.min()) + "," + str(result.x.max()) +"]")
         else:
+            logging.info("more observations than nodes")
             result = minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
             # print(result)
         return result.x
@@ -266,7 +272,7 @@ if __name__ == '__main__':
 
     # If you want to do more tests, just add parameters in this list.
     test = [
-        [150, 130],
+        [1000, 100],
     ]
     for nodes_num, obs_num in test:
         time = 1.0 * obs_num * dt

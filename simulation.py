@@ -44,7 +44,8 @@ class simulation:
 
         hidden_net = []
         initial = zeros(nodes_num * K)
-        for i in range(0, 50):  # 初始感染节点
+        tmp = int(nodes_num * K / 4)
+        for i in range(0, tmp):  # 初始感染节点
             initial[i * 4] = 1
 
         network = network_estimation(time, dt, nodes, val_hidden, trails=2000, band_power=1. / float(node_dim + 1), K=K)
