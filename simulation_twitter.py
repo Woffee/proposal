@@ -36,7 +36,7 @@ class simulation:
         hidden_net = []
         obs = pd.read_csv(obs_filepath, header=None)
         # initial = zeros(nodes_num * K)
-        initial = list(map(lambda x: int(x), obs.iloc[0, 0].split()))
+        initial = list(obs.iloc[0,:])
 
 
         network = network_estimation(ttime, dt, nodes, val_hidden, trails=2000, band_power=1. / float(node_dim + 1), K=K)

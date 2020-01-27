@@ -78,7 +78,7 @@ def read_data_from_xls(filepath):
     print(features)
     # exit(0)
 
-    np.savetxt(SAVE_PATH + '/obs.txt', obs, delimiter=' ', fmt='%d')
+    np.savetxt(SAVE_PATH + '/obs.csv', obs, delimiter=',', fmt='%d')
     np.savetxt(SAVE_PATH + '/features.csv', features, delimiter=',', fmt='%.8f')
     # print(type(obs))
     # print(usernames)
