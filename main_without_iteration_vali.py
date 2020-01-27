@@ -108,8 +108,8 @@ class MiningHiddenLink:
             cur_time = datetime.now()
             result = minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=Bounds(0,1),
                               constraints=[upcons], tol=None, callback=None, options=options)
-            logging.info("minimizer_L1 time:" + str( datetime.now() - cur_time ) + "," + str(options))
-            logging.info("minimizer_L1 result.x:[" + str(result.x.min()) + "," + str(result.x.max()) +"]")
+            logging.info("minimizer_L1 time:" + str( datetime.now() - cur_time ) + "," + str(options)
+                         + " result.fun:" + str(result.fun) + ", " + str(result.success) + ", " + str(result.message))
         else:
             logging.info("more observations than nodes")
             result = minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})

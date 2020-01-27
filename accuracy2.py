@@ -107,7 +107,7 @@ class accuracy:
         t_near = []
 
         for i in range(len(data_o)):
-            print(i)
+            # print(i)
             if (data_o[i] == data_e[i]).all():
                 x_near.append(data_o[i, 0])
                 y_near.append(data_o[i, 1])

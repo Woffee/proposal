@@ -31,14 +31,14 @@ class network_estimation:
 		self.band_power=band_power  #kernel bandwidth
 		self.K = K
 	            
-	def simulation(self,val_hidden,nodes,initial,time,dt,block_dim,covariates,model_type,net1=None,net2=None,true_net=True,hidden_network_fun=None):
+	def simulation(self,val_hidden,nodes,initial,ttime,dt,block_dim,covariates,model_type,net1=None,net2=None,true_net=True,hidden_network_fun=None):
 		# NOTE: only applicable to simulation study, simulate the spreading process and generate the time sequence of 0-1 vector of infected status from the given mean-field model
 		if model_type==1:#normal model with sampled value
 			net_fun=lambda a,b,c,d:sample_net(a,b,c,d,evl)
 			iter_fun=normal_model
 			val_hidden=val_hidden
 			coef=array([])
-		elif model_type==2:#  normal model with values at all nodes
+		elif model_type==2:# === normal model with values at all nodes ===
 			net_fun=norm_net
 			iter_fun=normal_model
 			val_hidden=val_hidden
@@ -93,7 +93,7 @@ class network_estimation:
 			net1*=net2
 			self.net1=net1
 		print("net1:", net1.shape) # 就是simulation那个nodes
-		time_line=append(zeros(1),cumsum(dt*ones(int(time/dt))))
+		time_line=append(zeros(1),cumsum(dt*ones(int(ttime/dt))))
 		solutions=[initial]
 		t=1
 		random.seed(1)
