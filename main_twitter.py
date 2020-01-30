@@ -85,8 +85,8 @@ class MiningHiddenLink:
     def square_sum(self, x):
         # y = np.dot(x,x)
         y = np.sum( x**2 )
-        print("square_sum: " + str(y))
-        logging.info("square_sum: " + str(y))
+        # print("square_sum: " + str(y))
+        # logging.info("square_sum: " + str(y))
         return y
 
     # 1.4
@@ -104,7 +104,7 @@ class MiningHiddenLink:
         # print("D:", D.shape)
         # D: (15, 120)
         if(D.shape[0] < D.shape[1]):
-            options = {'maxiter': 10, 'ftol': 1e-01, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
+            options = {'maxiter': 10, 'ftol': 1, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
             # less observations than nodes
             # see https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html#optimize-minimize-slsqp
             upcons = {'type':'ineq','fun':self.lessObsUpConstrain,'args':(D,y)}
@@ -125,7 +125,9 @@ class MiningHiddenLink:
     def get_r_xit(self, x, i, t_l, features, spreading, K, bandwidth, dt):
         numerator = 0.0
         denominator = 0.0
-
+        # print(spreading.shape) # 30,600
+        # print(features.shape) # 300,5
+        # exit(0)
         for j in range(features.shape[0]):
             x_j = features.iloc[j]
             g = self.gaussiankernel(x, x_j, bandwidth, features.shape[1])
@@ -140,7 +142,7 @@ class MiningHiddenLink:
 
         r_matrix = []
         for x in range(features.shape[0]):
-            print("get_r_matrix now x:",x)
+            # print("get_r_matrix now x:",x)
             for i in range(K):
                 row = []
                 for t in range(spreading.shape[0] - 1):
@@ -221,7 +223,7 @@ class MiningHiddenLink:
         spreading_sample = pd.read_csv(obs_filepath, header=None)
 
         # feature_sample = np.array(feature_sample)
-        spreading_sample = np.array(spreading_sample).T
+        spreading_sample = np.array(spreading_sample)
 
         E = self.get_E(feature_sample, spreading_sample, K, dt)
         E_filepath = self.save_E(E, self.save_path + "to_file_E_.csv")
