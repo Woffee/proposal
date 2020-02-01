@@ -64,7 +64,7 @@ class simulation:
             obs_filepath = self.save_path + 'obs_' + desc + '_original_' + rundate + '.csv'
             true_net_filepath = self.save_path + 'true_net_' + desc + '_original_' + rundate + '.csv'
 
-        pd.DataFrame(obs).to_csv(obs_filepath, index=None)
+        pd.DataFrame(obs).to_csv(obs_filepath, index=None, header=None)
         true_net.to_csv(true_net_filepath, index=None)
         print(obs_filepath)
 

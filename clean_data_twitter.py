@@ -181,7 +181,7 @@ def true_net_file():
     true_net.to_csv(to_file, index=None)
 
 
-read_data_from_xls('/Users/woffee/www/xiaoqi_code/xiaoqi_data/twitter_data/')
+read_data_from_xls('/Users/woffee/www/twitter_data/')
 true_net_file()
-print("clean_data2 done")
+print("clean_data_twitter done")
 

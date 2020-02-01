@@ -24,7 +24,7 @@ from scipy.optimize import Bounds
 # import random
 # from clean_data import Clean_data
 from simulation_twitter import simulation
-from accuracy2 import accuracy
+from accuracy_twitter import accuracy
 import logging
 from datetime import datetime
 
@@ -241,7 +241,7 @@ if __name__ == '__main__':
                         filename=BASE_DIR + '/log/' + today + '.log')
 
     K = 2
-    nodes_num = 50
+    nodes_num = 300
     obs_num = 30
 
     node_dim = 2
@@ -260,6 +260,7 @@ if __name__ == '__main__':
 
     obs_filepath = save_path + 'obs.csv'
     feature_filepath = save_path + 'features.csv'
+    true_net_filepath = save_path + "true_net.csv"
 
     # 1 Estimate the edge matrix E
     logging.info("twitter mining hidden link start")
@@ -270,9 +271,7 @@ if __name__ == '__main__':
     print(e_filepath)
 
     # 2 Process data files
-    true_net_filepath = save_path + "true_net.csv"
     true_net = pd.read_csv(true_net_filepath, sep=',')
-
     true_net_re_filepath = save_path + "true_net_re.csv"
     hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
     true_net['e'] = hidden_link.values.flatten()
@@ -284,10 +283,13 @@ if __name__ == '__main__':
     logging.info("step 4: " + obs_filepath_2)
     logging.info("step 4: " + true_net_filepath_2)
 
+    # obs_filepath_2 = save_path + "obs_300x30_estimate.csv"
+    # true_net_filepath_2 = save_path + "true_net_300x30_estimate.csv"
+
     # 4 Assess accuracy
     a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
-    a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
     print("accuracy1:", a1)
+    a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
     print("accuracy2:", a2)
     logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
     logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
