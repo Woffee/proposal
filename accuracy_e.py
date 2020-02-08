@@ -64,12 +64,12 @@ if __name__ == '__main__':
     ]
 
 
-    """
 
-    original = []
-    estimate = []
-
+    fig, axs = plt.subplots(len(test), 1, sharey=True, tight_layout=True)
+    ii = 0
     for nodes_num, obs_num in test:
+        original = []
+        estimate = []
         # time = 1.0 * obs_num * dt
         print(nodes_num, obs_num)
         # logging.info("sparse vali start: " + str(nodes_num) + "x" + str(obs_num))
@@ -123,33 +123,47 @@ if __name__ == '__main__':
         # print(log_info)
         # logging.info(log_info)
 
-    original = np.array(original)
-    estimate = np.array(estimate)
+        original = np.array(original)
+        estimate = np.array(estimate)
 
-    np.savetxt('./original.txt', original, fmt='%.8f')
-    np.savetxt('./estimate.txt', estimate, fmt='%.8f')
-    exit(0)
-    """
+        print("len(original)", len(original))
+        print("len(estimate)", len(estimate))
 
-
-    original = np.loadtxt('./original.txt')
-    estimate = np.loadtxt('./estimate.txt')
-
-    perc_o = get_percentage(original)
-    perc_e = get_percentage(estimate)
-
-    size_o = list( map(lambda x: x*2, perc_o ) )
-    size_e = list( map(lambda x: x*2, perc_e ) )
-
-    # plt.figure(figsize=(10, 5))
-    # plt.title("Success Rate when Choosing Different Time Steps")
-    plt.xlabel("Number of nodes")
-    # plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-    plt.ylabel("Distance of each node pair")
-    # plt.ylim(0.95, 1)
+        # We can set the number of bins with the `bins` kwarg
+        axs[ii].hist(original[:, 1], bins=20, alpha=0.3, range=(0, 1.5), color='tab:blue')
+        axs[ii].hist(estimate[:, 1], bins=20, alpha=0.3, range=(0, 1.5), color='tab:red')
+        axs[ii].set_title('nodes_num = '+str(nodes_num))
+        ii = ii + 1
 
 
-    plt.scatter(original[:, 0], original[:, 1], c='tab:blue', s=size_o, marker='o', alpha=0.3)
-    plt.scatter(estimate[:, 0], estimate[:, 1], c='tab:red',  s=size_e, marker='o', alpha=0.3)
+    # np.savetxt('./original.txt', original, fmt='%.8f')
+    # np.savetxt('./estimate.txt', estimate, fmt='%.8f')
+    # exit(0)
+
+
+
+    # original = np.loadtxt('./original.txt')
+    # estimate = np.loadtxt('./estimate.txt')
+
+    # perc_o = get_percentage(original)
+    # perc_e = get_percentage(estimate)
+
+
+
+
+
+    # size_o = list( map(lambda x: x*2, perc_o ) )
+    # size_e = list( map(lambda x: x*2, perc_e ) )
+    #
+    # # plt.figure(figsize=(10, 5))
+    # # plt.title("Success Rate when Choosing Different Time Steps")
+    # plt.xlabel("Number of nodes")
+    # # plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+    # plt.ylabel("Distance of each node pair")
+    # # plt.ylim(0.95, 1)
+    #
+    #
+    # plt.scatter(original[:, 0], original[:, 1], c='tab:blue', s=size_o, marker='o', alpha=0.3)
+    # plt.scatter(estimate[:, 0], estimate[:, 1], c='tab:red',  s=size_e, marker='o', alpha=0.3)
 
     plt.show()
