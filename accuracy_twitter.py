@@ -131,7 +131,7 @@ class accuracy:
         for i in range(num_nodes):
             node = nodes[i]
             for t in range(T):
-                row = [node[0], node[1]]
+                row = [node[0], node[1], node[2], node[3], node[4]]
                 for k in range(K):
                     row.append( obs[t, i*K + k] )
                 row.append(t)
