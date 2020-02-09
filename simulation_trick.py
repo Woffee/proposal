@@ -102,7 +102,7 @@ class network_estimation:
 			current=solutions[-1]
 			# print(current)
 			delta=iter_fun(net1,coef,nodes,covariates,current)
-			convert_rate=exp(-delta*dt) # 感染概率
+			convert_rate=exp(-delta*dt)
 			rand_num=random.rand(len(current))
 			solutions.append(current+(rand_num>convert_rate).astype(int))
 			t+=1

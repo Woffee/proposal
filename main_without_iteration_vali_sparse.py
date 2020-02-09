@@ -1,6 +1,6 @@
 """
 Version 3，暂时不考虑迭代，假设分类已知
-验证洗漱矩阵
+验证稀疏矩阵
 """
 
 import pandas as pd
@@ -10,7 +10,9 @@ import numpy as np
 from numba import jit
 import csv
 # import math
-# import datetime
+from datetime import datetime
+from scipy.optimize import minimize
+from scipy.optimize import Bounds
 import time
 import scipy
 import os
@@ -23,22 +25,21 @@ from simulation import simulation
 from accuracy2 import accuracy
 import logging
 
-
 class MiningHiddenLink:
     def __init__(self, save_path):
         self.save_path = save_path
 
     # calculate error in 1.5
-    def get_min_error(self, E1, E2, n, k, t):
-        df = (n*k)**2
-        tmp = (np.std(E1, dtype=np.float64) + np.std(E2,dtype=np.float64)) * 0.5
-        error = tmp**2 * chi.ppf(0.9, df) / t
-        return error
+    # def get_min_error(self, E1, E2, n, k, t):
+    #     df = (n*k)**2
+    #     tmp = (np.std(E1, dtype=np.float64) + np.std(E2,dtype=np.float64)) * 0.5
+    #     error = tmp**2 * scipy.stats.chi.ppf(0.9, df) / t
+    #     return error
 
 
     def is_constrained(self, E1, E2, min_error):
         e = (np.sum( (E1-E2) ** 2 ))
-        print("real_error:",e)
+        # print("real_error:",e)
         return e < min_error
 
 
@@ -94,16 +95,22 @@ class MiningHiddenLink:
         x0=np.ones(D.shape[1],)
         # print('guess x0>>>>>>>>>>')
         # print(x0)
-        print("D:", D.shape)
+        # print("D:", D.shape)
         # D: (15, 120)
         if(D.shape[0] < D.shape[1]):
-            #less observations than nodes
+            options = {'maxiter': 10, 'ftol': 1e-01, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
+            # less observations than nodes
+            # see https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html#optimize-minimize-slsqp
             upcons = {'type':'ineq','fun':self.lessObsUpConstrain,'args':(D,y)}
-            result = scipy.optimize.minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=scipy.optimize.Bounds(0,1), constraints=[upcons], tol=None, callback=None, options={'maxiter': 100, 'ftol': 1e-03, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-08})
-            print(result)
+            cur_time = datetime.now()
+            result = minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=Bounds(0,1),
+                              constraints=[upcons], tol=None, callback=None, options=options)
+            logging.info("minimizer_L1 time:" + str( datetime.now() - cur_time ) + "," + str(options)
+                         + " result.fun:" + str(result.fun) + ", " + str(result.success) + ", " + str(result.message))
         else:
-            result = scipy.optimize.minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=scipy.optimize.Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
-            print(result)
+            logging.info("more observations than nodes")
+            result = minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
+            # print(result)
         return result.x
 
     def read_data_from_simulation(self, obs_filepath, true_net_filepath, K, sample_size = 100):
@@ -134,9 +141,9 @@ class MiningHiddenLink:
         #             deleted.append(i)
         # print("deleted:", deleted)
         T = list(set(index).difference(set(deleted)))
-        print(T)
-        print("features_matirx:",features.shape)
-        print("spreading_sample:",spreading_sample.shape)
+        # print(T)
+        # print("features_matirx:",features.shape)
+        # print("spreading_sample:",spreading_sample.shape)
         return features, spreading_sample, T
 
 
@@ -159,7 +166,7 @@ class MiningHiddenLink:
 
         r_matrix = []
         for x in range(features.shape[0]):
-            print("get_r_matrix now x:",x)
+            # print("get_r_matrix now x:",x)
             for i in range(K):
                 row = []
                 for t in range(len(T)-1):
@@ -173,19 +180,19 @@ class MiningHiddenLink:
 
     def save_E(self, E, filepath):
         # print(E1)
-        print("E:", len(E), len(E[0]))
+        # print("E:", len(E), len(E[0]))
         with open(filepath, "w") as f:
             writer = csv.writer(f)
             writer.writerows(E)
-        print(filepath)
+        # print(filepath)
         return filepath
 
     def clear_zeros(self, mitrix):
         # delete t with all zeros
         all_zero_columns = np.where(~mitrix.any(axis=0))[0]
         res = np.delete(mitrix, all_zero_columns, axis=1)
-        print("clear 0:")
-        print(res)
+        # print("clear 0:")
+        # print(res)
 
         return res
 
@@ -193,7 +200,7 @@ class MiningHiddenLink:
     # 1.1 & 1.4
     def get_E(self, features, spreading, subT, K, dt=0.01):
         logging.info("dt:" + str(dt))
-        print("dt:",dt)
+        # print("dt:",dt)
         r_matrix = self.get_r_matrix(features, spreading, subT, K, dt)
 
         sum_col = np.sum(r_matrix, axis=0)
@@ -204,7 +211,7 @@ class MiningHiddenLink:
         r_matrix = np.delete(r_matrix, deleted, axis=1) # delete columns where all 0
         logging.info("r_matrix_deleted:" + str(deleted))
 
-        print("r_matrix: ", r_matrix.shape)
+        # print("r_matrix: ", r_matrix.shape)
         logging.info("r_matrix.shape: " + str( r_matrix.shape))
 
         # spreading = spreading[subT, :]
@@ -236,13 +243,11 @@ class MiningHiddenLink:
         return np.array(edge_list)
 
     def do(self, nodes_num, K, obs_num, dt, obs_filepath, true_net_filepath):
-        logging.info("mining hidden link start")
         feature_sample, spreading_sample, T = self.read_data_from_simulation(obs_filepath, true_net_filepath, K,
                                                                         sample_size=nodes_num)
         E = self.get_E(feature_sample, spreading_sample, T, K, dt)
         E_filepath = self.save_E(E, self.save_path + "to_file_E_" + rundate + ".csv")
         logging.info(E_filepath)
-        logging.info("mining hidden link done")
         return E_filepath
 
 if __name__ == '__main__':
@@ -312,7 +317,8 @@ if __name__ == '__main__':
         true_net_re_filepath = save_path + "to_file_true_net_sparse_" + rundate + "_re.csv"
         true_net = pd.read_csv(true_net_filepath, sep=',')
         hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
-        hidden_link[ hidden_link < 0.5 ] = 0
+        hidden_link[ hidden_link <= 0.5 ] = 0
+        hidden_link[ hidden_link > 0.5 ] = 1
         true_net['e'] = hidden_link.values.flatten()
         true_net.to_csv(true_net_re_filepath, header=True, index=None)
         logging.info("step 1: " + true_net_re_filepath)
@@ -323,8 +329,8 @@ if __name__ == '__main__':
 
         # 5
         a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
-        a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
         print("accuracy1:", a1)
+        a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
         print("accuracy2:", a2)
         logging.info("step 3 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
         logging.info("step 3 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))

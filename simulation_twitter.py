@@ -18,7 +18,7 @@ class simulation:
     def __init__(self, save_path):
         self.save_path = save_path
 
-    def do(self, K, nodes_num, node_dim, ttime, dt, filepath = None, obs_filepath=None):
+    def do(self, K, nodes_num, node_dim, ttime, dt, filepath = None, obs_filepath=None, test_num=1):
         if filepath and os.path.exists(filepath):
             file_net = pd.read_csv(filepath)
             nodes = file_net[['node2_1','node2_2','node2_3','node2_4','node2_5']].iloc[range(nodes_num * K)].values
@@ -58,8 +58,8 @@ class simulation:
         desc = str(nodes_num) + 'x' + str(int(ttime / dt))
         rundate = t_module.strftime("%m%d%H%M", t_module.localtime())
         if filepath and os.path.exists(filepath):
-            obs_filepath = self.save_path + 'obs_' + desc + '_estimate.csv'
-            true_net_filepath = self.save_path + 'true_net_' + desc + '_estimate.csv'
+            obs_filepath = self.save_path + 'obs_' + desc + ("_estimate_%d.csv" % test_num)
+            true_net_filepath = self.save_path + 'true_net_' + desc + ("_estimate_%d.csv" % test_num)
         else:
             obs_filepath = self.save_path + 'obs_' + desc + '_original_' + rundate + '.csv'
             true_net_filepath = self.save_path + 'true_net_' + desc + '_original_' + rundate + '.csv'

@@ -257,42 +257,43 @@ if __name__ == '__main__':
     ac = accuracy(save_path)
     sim = simulation(save_path)
 
+    for i in range(1, 6):
+        obs_filepath = save_path + ("obs_%d.csv" % i)
+        feature_filepath = save_path + ("features_%d.csv" % i)
+        true_net_filepath = save_path + ("true_net_%d.csv" % i)
+        print(obs_filepath)
 
-    obs_filepath = save_path + 'obs.csv'
-    feature_filepath = save_path + 'features.csv'
-    true_net_filepath = save_path + "true_net.csv"
+        # 1 Estimate the edge matrix E
+        logging.info("twitter mining hidden link start")
+        current_time = datetime.now()
+        e_filepath = mhl.do(nodes_num, K, int(ttime/dt), 0.05, obs_filepath, feature_filepath)
+        logging.info("twitter mining hidden link done")
+        logging.info("twitter mining hidden link time: " + str( datetime.now() - current_time ))
+        print(e_filepath)
 
-    # 1 Estimate the edge matrix E
-    logging.info("twitter mining hidden link start")
-    current_time = datetime.now()
-    e_filepath = mhl.do(nodes_num, K, int(ttime/dt), 0.05, obs_filepath, feature_filepath)
-    logging.info("twitter mining hidden link done")
-    logging.info("twitter mining hidden link time: " + str( datetime.now() - current_time ))
-    print(e_filepath)
+        # 2 Process data files
+        true_net = pd.read_csv(true_net_filepath, sep=',')
+        true_net_re_filepath = save_path + ("true_net_re_%d.csv" % i)
+        hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
+        true_net['e'] = hidden_link.values.flatten()
+        true_net.to_csv(true_net_re_filepath, header=True, index=None)
+        logging.info("step 3: " + true_net_re_filepath)
 
-    # 2 Process data files
-    true_net = pd.read_csv(true_net_filepath, sep=',')
-    true_net_re_filepath = save_path + "true_net_re.csv"
-    hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
-    true_net['e'] = hidden_link.values.flatten()
-    true_net.to_csv(true_net_re_filepath, header=True, index=None)
-    logging.info("step 3: " + true_net_re_filepath)
+        # 3 Estimate the observation data with E
+        obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath, obs_filepath, i)
+        logging.info("step 4: " + obs_filepath_2)
+        logging.info("step 4: " + true_net_filepath_2)
 
-    # 3 Estimate the observation data with E
-    obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath, obs_filepath)
-    logging.info("step 4: " + obs_filepath_2)
-    logging.info("step 4: " + true_net_filepath_2)
+        # obs_filepath_2 = save_path + "obs_300x30_estimate.csv"
+        # true_net_filepath_2 = save_path + "true_net_300x30_estimate.csv"
 
-    # obs_filepath_2 = save_path + "obs_300x30_estimate.csv"
-    # true_net_filepath_2 = save_path + "true_net_300x30_estimate.csv"
-
-    # 4 Assess accuracy
-    a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
-    print("accuracy1:", a1)
-    a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
-    print("accuracy2:", a2)
-    logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
-    logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
+        # 4 Assess accuracy
+        a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
+        print("success rate:", a1)
+        a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
+        print("accuracy:", a2)
+        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
+        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
 
 
 
