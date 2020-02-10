@@ -284,8 +284,13 @@ if __name__ == '__main__':
         logging.info("step 4: " + obs_filepath_2)
         logging.info("step 4: " + true_net_filepath_2)
 
-        # obs_filepath_2 = save_path + "obs_300x30_estimate.csv"
-        # true_net_filepath_2 = save_path + "true_net_300x30_estimate.csv"
+
+
+        # obs_filepath_2 = save_path + ("obs_300x30_estimate_%d.csv" % i)
+        # true_net_filepath_2 = save_path + ("true_net_300x30_estimate_%d.csv" % i)
+
+        print(obs_filepath_2)
+        print(true_net_filepath_2)
 
         # 4 Assess accuracy
         a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)

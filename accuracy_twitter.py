@@ -123,7 +123,9 @@ class accuracy:
 
     def get_data(self, fp_obs, fp_true_net, K, num_nodes):
         true_net = pd.read_csv(fp_true_net, encoding='utf-8').dropna()
-        obs      = pd.read_csv(fp_obs, encoding='utf-8').dropna().to_numpy()
+        obs      = pd.read_csv(fp_obs, encoding='utf-8', header=None).dropna().to_numpy()
+        obs      = self.recovery_process(obs)
+
         T = len(obs)
         nodes = true_net[['node1_1','node1_2','node1_3','node1_4','node1_5']].drop_duplicates().to_numpy()
 
@@ -224,7 +226,7 @@ class accuracy:
         print(accuracy_n2)
         print(accuracy_t)
 
-        accuracy = (accuracy_x1 + accuracy_x2 + accuracy_x3 + accuracy_x4 + accuracy_x5 + accuracy_n1 + accuracy_n2 + accuracy_t) / 5
+        accuracy = (accuracy_x1 + accuracy_x2 + accuracy_x3 + accuracy_x4 + accuracy_x5 + accuracy_n1 + accuracy_n2 + accuracy_t) / 8
         return accuracy
 
 
