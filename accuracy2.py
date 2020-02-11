@@ -53,11 +53,21 @@ class accuracy:
         print(filepath_result)
         return filepath_result
 
+    def select10days(self, original):
+        T = original.shape[0]
+        index = []
+        for t in range(int(T/10)):
+            index.append( t * 10 )
+        return original[index]
 
     def get_accuracy1(self, filepath_o, filepath_e, K, num_nodes):
         original = pd.read_csv(filepath_o, encoding='utf-8').dropna().to_numpy()
         estimate = pd.read_csv(filepath_e, encoding='utf-8').dropna().to_numpy()
-        print(len(original), len(original[0]))
+        print(original.shape)
+
+        original = self.select10days(original)
+        estimate = self.select10days(estimate)
+
         s = 0
         for i in range(num_nodes):
             equal = True

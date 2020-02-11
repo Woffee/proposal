@@ -23,7 +23,7 @@ class accuracy:
             if d < dist:
                 dist = d
                 near = line
-        return near[0], near[1], near[2], near[3], near[4], near[5], near[6], near[7]
+        return near[0], near[1], near[2], near[3], near[4], near[5], near[6]
 
     def cal_accuracy(self, x, x_near):
         near_dot = np.dot(x_near,x_near)
@@ -72,28 +72,37 @@ class accuracy:
                 # print(original[i][j])
 
             # 把数字改成从1开始
-            i = 0
-            last = 0
-            while(i < original.shape[0]):
-                now = original[i][j]
-                # print(type(now))
-                k = i
-                if (now - last) > 1:
-                    while(k+1 < original.shape[0] and original[k+1][j] == now):
-                        k = k+1
-                    for l in range(i, k+1):
-                        original[l][j] = last + 1
-                last = original[k][j]
-                i = k + 1
-            # for i in range(original.shape[0]):
-            #     print(original[i][j])
-            # exit()
+            # i = 0
+            # last = 0
+            # while(i < original.shape[0]):
+            #     now = original[i][j]
+            #     # print(type(now))
+            #     k = i
+            #     if (now - last) > 1:
+            #         while(k+1 < original.shape[0] and original[k+1][j] == now):
+            #             k = k+1
+            #         for l in range(i, k+1):
+            #             original[l][j] = last + 1
+            #     last = original[k][j]
+            #     i = k + 1
+            # # for i in range(original.shape[0]):
+            # #     print(original[i][j])
+            # # exit()
+
+            # 把数字改成1
+            for i in range(original.shape[0]):
+                if original[i][j] > 1:
+                    original[i][j] = 1
         return original
 
     # success rate
     def get_accuracy1(self, filepath_o, filepath_e, K, num_nodes):
         original = pd.read_csv(filepath_o, encoding='utf-8', header=None).dropna().to_numpy()
         estimate = pd.read_csv(filepath_e, encoding='utf-8', header=None).dropna().to_numpy()
+
+        original = self.merge(original)
+        estimate = self.merge(estimate)
+        print("merged: ", original.shape)
 
         original = self.recovery_process(original)
         estimate = self.recovery_process(estimate)
@@ -108,22 +117,33 @@ class accuracy:
         s = 0
         for i in range(num_nodes):
             equal = True
-            for j in range(K):
-                ii = i*K + j
-                col1 = original[:, ii]
-                col2 = estimate[:, ii]
-                if not (col1 == col2).all():
-                    equal = False
-                    break
+
+            col1 = original[:, i]
+            col2 = estimate[:, i]
+            if not (col1 == col2).all():
+                equal = False
             if equal:
                 # print("equal:", i)
                 s = s + 1
         print("equal:", s, ",all:",num_nodes)
         return 1.0*s/num_nodes
 
+    def merge(self, obs):
+        obs_2 = []
+        for i in range(obs.shape[1]):
+            if i % 2 == 0:
+                a = obs[:, i]
+                b = obs[:, i + 1]
+                # print(a)
+                # print(b)
+                obs_2.append(a + b)
+        obs_2 = np.array(obs_2).T
+        return obs_2
+
     def get_data(self, fp_obs, fp_true_net, K, num_nodes):
         true_net = pd.read_csv(fp_true_net, encoding='utf-8').dropna()
         obs      = pd.read_csv(fp_obs, encoding='utf-8', header=None).dropna().to_numpy()
+        obs      = self.merge(obs)
         obs      = self.recovery_process(obs)
 
         T = len(obs)
@@ -134,8 +154,8 @@ class accuracy:
             node = nodes[i]
             for t in range(T):
                 row = [node[0], node[1], node[2], node[3], node[4]]
-                for k in range(K):
-                    row.append( obs[t, i*K + k] )
+
+                row.append( obs[t, i] )
                 row.append(t)
                 # print(row)
                 data.append(row)
@@ -156,7 +176,7 @@ class accuracy:
         x5_near = []
 
         n1_near = []
-        n2_near = []
+        # n2_near = []
         t_near = []
 
         for i in range(len(data_o)):
@@ -169,10 +189,10 @@ class accuracy:
                 x5_near.append(data_o[i, 4])
 
                 n1_near.append(data_o[i, 5])
-                n2_near.append(data_o[i, 6])
-                t_near.append(data_o[i, 7])
+                # n2_near.append(data_o[i, 6])
+                t_near.append(data_o[i, 6])
             else:
-                x1near, x2near, x3near, x4near, x5near, n1near, n2near, tnear = self.find_near(data_e[i], data_o)
+                x1near, x2near, x3near, x4near, x5near, n1near, tnear = self.find_near(data_e[i], data_o)
                 x1_near.append(x1near)
                 x2_near.append(x2near)
                 x3_near.append(x3near)
@@ -180,7 +200,7 @@ class accuracy:
                 x5_near.append(x5near)
 
                 n1_near.append(n1near)
-                n2_near.append(n2near)
+                # n2_near.append(n2near)
                 t_near.append(tnear)
 
         # x = nodes[['node1_x']].to_numpy().T.reshape(num_nodes * K, )
@@ -193,8 +213,8 @@ class accuracy:
         x5  = data_e[:,4]
 
         n1 = data_e[:,5]
-        n2 = data_e[:,6]
-        t  = data_e[:,7]
+        # n2 = data_e[:,6]
+        t  = data_e[:,6]
 
         x1_near = np.asarray(x1_near)
         x2_near = np.asarray(x2_near)
@@ -203,7 +223,7 @@ class accuracy:
         x5_near = np.asarray(x5_near)
 
         n1_near = np.asarray(n1_near)
-        n2_near = np.asarray(n2_near)
+        # n2_near = np.asarray(n2_near)
         t_near = np.asarray(t_near)
 
         accuracy_x1  = self.cal_accuracy(x1, x1_near)
@@ -213,7 +233,7 @@ class accuracy:
         accuracy_x5  = self.cal_accuracy(x5, x5_near)
 
         accuracy_n1 = self.cal_accuracy(n1, n1_near)
-        accuracy_n2 = self.cal_accuracy(n2, n2_near)
+        # accuracy_n2 = self.cal_accuracy(n2, n2_near)
         accuracy_t  = self.cal_accuracy(t, t_near)
 
         print(accuracy_x1)
@@ -223,13 +243,37 @@ class accuracy:
         print(accuracy_x5)
 
         print(accuracy_n1)
-        print(accuracy_n2)
+        # print(accuracy_n2)
         print(accuracy_t)
 
-        accuracy = (accuracy_x1 + accuracy_x2 + accuracy_x3 + accuracy_x4 + accuracy_x5 + accuracy_n1 + accuracy_n2 + accuracy_t) / 8
+        accuracy = (accuracy_x1 + accuracy_x2 + accuracy_x3 + accuracy_x4 + accuracy_x5 + accuracy_n1 + accuracy_t) / 7
         return accuracy
 
+    def get_accuracy3(self, fp_obs_o, fp_obs_e):
+        obs_o = np.loadtxt(fp_obs_o, delimiter=',')
+        obs_e = np.loadtxt(fp_obs_e, delimiter=',')
 
+        obs_o = self.merge(obs_o)
+        obs_e = self.merge(obs_e)
+
+        obs_o = self.recovery_process(obs_o)
+        obs_e = self.recovery_process(obs_e)
+
+        print(obs_e.shape)
+        ss = 0
+        for i in range(obs_o.shape[1]):
+            # print(i)
+            oo = obs_o[:, i]
+            ee = obs_e[:, i]
+
+            mm = oo-ee
+            # print(list(oo))
+            # print(list(ee))
+            # print(list(mm))
+            # print(sum(mm**2))
+
+            ss = ss + sum(mm**2)
+        return 1.0 * ss / obs_o.shape[1]
 
 
 if __name__ == '__main__':

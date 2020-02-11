@@ -221,7 +221,55 @@ def read_data_from_xls(filepath):
     # fig.tight_layout()
     # plt.show()
 
+# 从obs中，生成NC需要的数据
+def recovery_process(original, days=3):
+    for j in range(original.shape[1]):
+        # 超过3天不变，改为0
+        last = -1
+        s = 1
+        for i in range(original.shape[0]):
+            if original[i][j] == last:
+                s = s + 1
+            else:
+                s = 1
+                last = original[i][j]
+            if s > days:
+                original[i][j] = 0
+            # print(original[i][j])
 
+        # 把数字改成1
+        for i in range(original.shape[0]):
+            if original[i][j]>1:
+                original[i][j] = 1
+
+    index = []
+    for i in range(original.shape[0]):
+        if sum(original[i])>0:
+            index.append(i)
+    return original[index]
+
+def obs_to_nc(test_num, days = 3):
+    obs = np.loadtxt(SAVE_PATH + ("/obs_%d.csv" % test_num) , delimiter=',')
+
+    # aa = np.array([[1,2,3],[4,5,6],[7,8,9]])
+    # print(sum(aa[1]))
+    # exit()
+    # print(aa.T)
+    # print(aa[:, 1])
+    # [2 5 8]
+
+    obs_2 = []
+    for i in range(obs.shape[1]):
+        if i % 2==0:
+            a = obs[:, i]
+            b = obs[:, i+1]
+            # print(a)
+            # print(b)
+            obs_2.append(a+b)
+    obs_2 = np.array(obs_2).T
+    obs_2 = recovery_process(obs_2, days)
+
+    np.savetxt(SAVE_PATH + ("/c_time_state_original_%d_%d.txt" % (test_num,days)), obs_2, delimiter=' ', fmt='%d')
 
 
 def true_net_file(test_num):
@@ -246,9 +294,12 @@ def true_net_file(test_num):
     true_net.to_csv(to_file, index=None)
 
 if __name__ == '__main__':
-    for i in range(6):
-        if i>0:
-            true_net_file(i)
+    for days in [3]:
+        for i in range(6):
+            if i>0:
+                print(i, days)
+                obs_to_nc(i, days)
+
     # read_data_from_xls('/Users/woffee/www/twitter_data/')
     # true_net_file()
     # print("clean_data_twitter done")
