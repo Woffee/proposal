@@ -16,8 +16,9 @@ import os
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.cluster import KMeans
 from nltk.tokenize import word_tokenize
+import random
 
-
+random.seed(10)
 pd.set_option('display.max_columns', 500)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -192,11 +193,11 @@ def read_data_from_xls(filepath):
     # print(tweet.head())
 
 
-    usernames = list(set(tweet.FROM_USER))
-    usernames = [x for x in usernames if str(x) != 'nan']
-    usernames = usernames[:300]
+    all_usernames = list(tweet.FROM_USER)
+    all_usernames = [x for x in all_usernames if str(x) != 'nan']
+    usernames = random.sample(all_usernames, 300)
 
-    print("usernames[:5] = ", usernames[:5])
+    print("usernames[:15] = ", usernames[:15])
 
     test_num = '5'
 
@@ -294,13 +295,13 @@ def true_net_file(test_num):
     true_net.to_csv(to_file, index=None)
 
 if __name__ == '__main__':
-    for days in [3]:
-        for i in range(6):
-            if i>0:
-                print(i, days)
-                obs_to_nc(i, days)
+    # for days in [3]:
+    #     for i in range(6):
+    #         if i>0:
+    #             print(i, days)
+    #             obs_to_nc(i, days)
 
-    # read_data_from_xls('/Users/woffee/www/twitter_data/')
+    read_data_from_xls('/Users/woffee/www/twitter_data/')
     # true_net_file()
     # print("clean_data_twitter done")
 

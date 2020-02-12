@@ -6,8 +6,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVE_PATH = BASE_DIR + '/data_twitter'
 
 class accuracy:
-    def __init__(self, save_path):
+    def __init__(self, save_path, days):
         self.save_path = save_path
+        self.days = days
 
     def distance(self, a,b):
         s = 0
@@ -67,7 +68,7 @@ class accuracy:
                 else:
                     s = 1
                     last = original[i][j]
-                if s > 3:
+                if s > self.days:
                     original[i][j] = 0
                 # print(original[i][j])
 

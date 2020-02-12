@@ -23,6 +23,8 @@ import logging
 
 
 BINS = 40
+is_observation = False
+
 
 def get_percentage(original):
     hist, bins = np.histogram(original[:, 1], bins=20)
@@ -40,7 +42,7 @@ def get_percentage(original):
     return original_size
 
 def show_data(data):
-    fig1 = plt.figure()
+    fig1 = plt.figure(figsize=(8, 6))
     ax1 = fig1.add_subplot(111)
     # ax1.ticklabel_format(useOffset=False)
 
@@ -68,18 +70,30 @@ def show_data(data):
                 ec = None
             )
         )
-    plt.xticks([150, 160, 170, 180, 190, 200])
+    if is_observation:
+        plt.xticks([80, 90, 100, 110, 120])
+        plt.xlim(75, 125)
+        plt.xlabel("Number of observations")
+    else:
+        plt.xticks([160, 170, 180, 190, 200])
+        plt.xlim(155, 205)
+        plt.xlabel("Number of nodes")
 
-    plt.xlim(155, 205)
     plt.ylim(-0.05, 1.5)
-
-    plt.xlabel("Number of nodes")
     plt.ylabel("Distance of each node pair")
 
     # plt.yticks([0,0.5,1])
-    plt.show()
 
+    is_save = True
 
+    if is_save:
+        if is_observation:
+            plt.savefig('./Distance_distribution_t.pdf', format='pdf', dpi=1000)
+        else:
+            # ax1.set_rasterized(True)
+            plt.savefig('./Distance_distribution.pdf', format='pdf', dpi=1000)
+    else:
+        plt.show()
 
 if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -98,18 +112,34 @@ if __name__ == '__main__':
     time = 7.5
     dt = 0.05
 
-    test = [
-        # [130, 100],
-        # [140, 100],
-        # [150, 100],
-        [160, 100],
-        [170, 100],
-        [180, 100],
-        [190, 100],
-        [200, 100],
-    ]
 
-    data_toshow_file = './data_to_show.csv'
+
+    if is_observation:
+        test = [
+            # [130, 100],
+            # [140, 100],
+            # [150, 100],
+            [200, 80],
+            [200, 90],
+            [200, 100],
+            [200, 110],
+            [200, 120],
+        ]
+        data_toshow_file = './data_to_show_t.csv'
+    else:
+        test = [
+            # [130, 100],
+            # [140, 100],
+            # [150, 100],
+            [160, 100],
+            [170, 100],
+            [180, 100],
+            [190, 100],
+            [200, 100],
+        ]
+        data_toshow_file = './data_to_show.csv'
+
+
     if not os.path.exists(data_toshow_file):
 
         # fig, axs = plt.subplots(len(test), 1, sharey=True, tight_layout=True)
@@ -121,6 +151,11 @@ if __name__ == '__main__':
         data_toshow_type = []
 
         for nodes_num, obs_num in test:
+            if is_observation:
+                xxx = obs_num
+            else:
+                xxx = obs_num
+
             original = []
             estimate = []
             # time = 1.0 * obs_num * dt
@@ -161,9 +196,9 @@ if __name__ == '__main__':
             for index, row in true_net.iterrows():
                 # print(row['net_hidden'], row['e'])
                 if row['net_hidden'] > 0:
-                    original.append([nodes_num-1, data.iloc[index, 6]])
+                    original.append( data.iloc[index, 6])
                 if row['e'] > 0:
-                    estimate.append([nodes_num+1, data.iloc[index, 6]])
+                    estimate.append( data.iloc[index, 6])
 
 
             # original_e = true_net.net_hidden.to_numpy()
@@ -176,26 +211,32 @@ if __name__ == '__main__':
             # print(log_info)
             # logging.info(log_info)
 
-            original = np.array(original)
-            estimate = np.array(estimate)
+            # original = np.array(original)
+            # estimate = np.array(estimate)
 
             len_o = len(original)
-            print("len(original)", len(original))
-            print("len(estimate)", len(estimate))
-
-            hist, bins = np.histogram(original[:, 1], bins=BINS, range=(0, 1.5))
+            hist, bins = np.histogram(original, bins=BINS, range=(0, 1.5))
             print("bins:", bins)
-            hist = list(map(lambda x: 1.0*x/len_o, hist))
+            print("len(original)", len_o)
+            print("before: sum(hist)", np.sum(hist))
+            hist = list(map(lambda x: 1.0 * x / len_o, hist))
+            print("after : sum(hist)", np.sum(hist))
             for i,h in enumerate(hist):
-                data_toshow_nodesnum.append(nodes_num)
+                data_toshow_nodesnum.append(xxx)
                 data_toshow_dist.append(bins[i])
                 data_toshow_perc.append(hist[i])
                 data_toshow_type.append('original')
 
-            hist, bins = np.histogram(estimate[:, 1], bins=BINS, range=(0, 1.5))
-            hist = list(map(lambda x: 1.0 * x / len_o, hist))
+            len_e = len(estimate)
+            hist, bins = np.histogram(estimate, bins=BINS, range=(0, 1.5))
+            print("len(estimate)", len_e)
+            print("before: sum(hist)", np.sum(hist))
+            hist = list(map(lambda x: 1.0 * x / len_e, hist))
+            print("after : sum(hist)", np.sum(hist))
+
+
             for i, h in enumerate(hist):
-                data_toshow_nodesnum.append(nodes_num)
+                data_toshow_nodesnum.append(xxx)
                 data_toshow_dist.append(bins[i])
                 data_toshow_perc.append(hist[i])
                 data_toshow_type.append('estimate')
