@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVE_PATH = BASE_DIR + '/data_twitter'
 
 class accuracy:
-    def __init__(self, save_path, days):
+    def __init__(self, save_path, days=3):
         self.save_path = save_path
         self.days = days
 
@@ -276,25 +276,6 @@ class accuracy:
             ss = ss + sum(mm**2)
         return 1.0 * ss / obs_o.shape[1]
 
-
-if __name__ == '__main__':
-    K = 2
-    num_nodes = 100
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    save_path = BASE_DIR + '/data/'
-
-    fp_obs_o = save_path+'obs_100x100_original.csv'
-    fp_obs_e = save_path+'obs_100x100_estimate_11121658.csv'
-
-    fp_true_net_o = save_path+'true_net_100x100_original.csv'
-    fp_treu_net_e = save_path+'true_net_100x100_estimate_11121658.csv'
-
-    ac = accuracy(save_path)
-
-    a1 = ac.get_accuracy1(fp_obs_o, fp_obs_e, K, num_nodes)
-    a2 = ac.get_accuracy2(fp_obs_o, fp_obs_e, fp_true_net_o, fp_treu_net_e, K, num_nodes)
-    print("accuracy1:", a1)
-    print("accuracy2:", a2)
 
 
 

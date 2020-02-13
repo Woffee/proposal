@@ -9,19 +9,11 @@ import numpy as np
 
 from numba import jit
 import csv
-# import math
-# import datetime
 import time
-# import scipy
 import os
 import math
-# from scipy.optimize import nnls
-# from scipy.stats import chi
 from scipy.optimize import minimize
 from scipy.optimize import Bounds
-
-# import random
-# from clean_data import Clean_data
 from simulation import simulation
 from accuracy2 import accuracy
 import logging
@@ -31,14 +23,6 @@ from datetime import datetime
 class MiningHiddenLink:
     def __init__(self, save_path):
         self.save_path = save_path
-
-    # calculate error in 1.5
-    # def get_min_error(self, E1, E2, n, k, t):
-    #     df = (n*k)**2
-    #     tmp = (np.std(E1, dtype=np.float64) + np.std(E2,dtype=np.float64)) * 0.5
-    #     error = tmp**2 * scipy.stats.chi.ppf(0.9, df) / t
-    #     return error
-
 
     def is_constrained(self, E1, E2, min_error):
         e = (np.sum( (E1-E2) ** 2 ))
@@ -88,22 +72,15 @@ class MiningHiddenLink:
 
     # 1.4
     def minimizer_L1(self, x):
+        # D: (M, N)
         D=x[1]
         y=x[0].T
-        # print('D>>>>>>>>>>>>>>>>>>>>>>')
-        # print(D)
-        # print('y>>>>>>>>>>>>>>>>>>>>>>')
-        # print(y)
-        # x0=x[2].reshape(D.shape[1],)-(random.rand(D.shape[1]))/100
         x0=np.ones(D.shape[1],)
-        # print('guess x0>>>>>>>>>>')
-        # print(x0)
-        # print("D:", D.shape)
-        # D: (15, 120)
         if(D.shape[0] < D.shape[1]):
-            options = {'maxiter': 10, 'ftol': 1e-01, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
             # less observations than nodes
+            # Adjust the options' parameters to speed up when N >= 300
             # see https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html#optimize-minimize-slsqp
+            options = {'maxiter': 10, 'ftol': 1e-01, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
             upcons = {'type':'ineq','fun':self.lessObsUpConstrain,'args':(D,y)}
             cur_time = datetime.now()
             result = minimize(self.square_sum, x0, args=(), method='SLSQP', jac=None, bounds=Bounds(0,1),
@@ -113,7 +90,6 @@ class MiningHiddenLink:
         else:
             logging.info("more observations than nodes")
             result = minimize(self.moreObsfunc, x0, args=(D,y), method='L-BFGS-B', jac=None, bounds=Bounds(0,1), tol=None, callback=None, options={'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': -1, 'maxls': 20})
-            # print(result)
         return result.x
 
     def read_data_from_simulation(self, obs_filepath, true_net_filepath, K, sample_size = 100):
@@ -125,28 +101,12 @@ class MiningHiddenLink:
         features.index = np.arange(sample_size)
 
         spreading_sample = pd.read_csv(obs_filepath, encoding='utf-8')
-        # spreading_sample.drop('user_id', axis=1, inplace=True)
-        # spreading_sample.drop([spreading_sample.columns[0]], axis=1, inplace=True)
-        # spreading = spreading_sample.values
         spreading_sample = np.array(spreading_sample)
-
-        # obs = spreading[::10] # [开始：结束：步长]
-        # print(obs.shape) # (101, 600)
-        # features_matirx = features.values
 
         index = range(len(spreading_sample))
         deleted = []
-        # for i in range(len(spreading_sample)):
-        #     if i > 0:
-        #         last = spreading_sample[i - 1]
-        #         now = spreading_sample[i]
-        #         if (last == now).all():
-        #             deleted.append(i)
-        # print("deleted:", deleted)
+
         T = list(set(index).difference(set(deleted)))
-        # print(T)
-        # print("features_matirx:",features.shape)
-        # print("spreading_sample:",spreading_sample.shape)
         return features, spreading_sample, T
 
 
@@ -194,9 +154,6 @@ class MiningHiddenLink:
         # delete t with all zeros
         all_zero_columns = np.where(~mitrix.any(axis=0))[0]
         res = np.delete(mitrix, all_zero_columns, axis=1)
-        # print("clear 0:")
-        # print(res)
-
         return res
 
 
@@ -213,27 +170,16 @@ class MiningHiddenLink:
                 deleted.append([i])
         r_matrix = np.delete(r_matrix, deleted, axis=1) # delete columns where all 0
         logging.info("r_matrix_deleted:" + str(deleted))
-
-        # print("r_matrix: ", r_matrix.shape)
         logging.info("r_matrix.shape: " + str( r_matrix.shape))
 
-        # spreading = spreading[subT, :]
         spreading = np.delete(spreading, deleted, axis=0)
         spreading = np.delete(spreading, -1, axis=0)
 
         logging.info("features.shape:" + str(features.shape))
         logging.info("spreading.shape:" + str(spreading.shape))
-        # logging.info("subT:" + str(subT))
-
-        # np.savetxt(save_path + 'to_file_spreading_' + rundate + ".txt", spreading)
-        # np.savetxt(save_path + 'to_file_r_matrix_' + rundate + ".txt", r_matrix)
 
         cores = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=cores)
-
-
-        # spreading = np.delete(spreading, -1, axis=0)
-        # spreading = clear_zeros(spreading)
 
         xit_all = []
         for r_xit in r_matrix:
@@ -272,18 +218,6 @@ if __name__ == '__main__':
 
     # If you want to do more tests, just add parameters in this list.
     test = [
-        [150, 80],
-        [150, 90],
-        [150, 100],
-        [150, 110],
-        [150, 120],
-
-        [180, 80],
-        [180, 90],
-        [180, 100],
-        [180, 110],
-        [180, 120],
-
         [200, 80],
         [200, 90],
         [200, 100],
@@ -304,53 +238,39 @@ if __name__ == '__main__':
         mhl = MiningHiddenLink(save_path)
         ac = accuracy(save_path)
 
-        # # 1 Generate simulation data
-        # obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, time, dt)
-        # logging.info("step 1: " + obs_filepath)
-        # logging.info("step 1: " + true_net_filepath)
-        #
-        # # 2 Estimate the edge matrix E
-        # logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
-        # current_time = datetime.now()
-        # e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
-        # logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
-        # logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
-        # logging.info("step 2: " + e_filepath)
-        #
-        # # 3 Process data files
-        # true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
-        # true_net = pd.read_csv(true_net_filepath, sep=',')
-        # hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
-        # true_net['e'] = hidden_link.values.flatten()
-        # true_net.to_csv(true_net_re_filepath, header=True, index=None)
-        # logging.info("step 3: " + true_net_re_filepath)
-        #
-        # # 4 Estimate the observation data with E
-        # obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, time, dt, true_net_re_filepath)
-        # logging.info("step 4: " + obs_filepath_2)
-        # logging.info("step 4: " + true_net_filepath_2)
+        # 1 Generate simulation data
+        obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, time, dt)
+        logging.info("step 1: " + obs_filepath)
+        logging.info("step 1: " + true_net_filepath)
 
-        files = os.listdir(save_path)
-        for f in files:
-            if 'true_net_' in f and 'original' in f and not 'sparse' in f:
-                true_net_filepath = save_path + "/" + str(f)
-                print(f)
-            elif 'true_net_' in f and 'estimate' in f and not 'sparse' in f:
-                true_net_filepath_2 = save_path + "/" + str(f)
-                print(f)
-            elif 'obs_' in f and 'original' in f and not 'sparse' in f:
-                obs_filepath = save_path + "/" + str(f)
-                print(f)
-            elif 'obs_' in f and 'estimate' in f and not 'sparse' in f:
-                obs_filepath_2 = save_path + "/" + str(f)
-                print(f)
+        # 2 Estimate the edge matrix E
+        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
+        current_time = datetime.now()
+        e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
+        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
+        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
+        logging.info("step 2: " + e_filepath)
+
+        # 3 Process data files
+        true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
+        true_net = pd.read_csv(true_net_filepath, sep=',')
+        hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
+        true_net['e'] = hidden_link.values.flatten()
+        true_net.to_csv(true_net_re_filepath, header=True, index=None)
+        logging.info("step 3: " + true_net_re_filepath)
+
+        # 4 Estimate the observation data with E
+        obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, time, dt, true_net_re_filepath)
+        logging.info("step 4: " + obs_filepath_2)
+        logging.info("step 4: " + true_net_filepath_2)
+
 
         # 5 Assess accuracy
         a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
         print("success rate:", a1)
         logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
 
-        # a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
-        # print("accuracy2:", a2)
-        # logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
+        a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
+        print("accuracy2:", a2)
+        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
 

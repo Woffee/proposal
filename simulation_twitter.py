@@ -70,23 +70,3 @@ class simulation:
 
         return obs_filepath, true_net_filepath
 
-
-if __name__ == '__main__':
-    rundate = t_module.strftime("%m%d%H%M", t_module.localtime())
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    save_path = BASE_DIR + '/../data/'
-
-    filepath = save_path + 'to_file_true_net_11121656_re.csv'
-
-    K = 2
-    nodes_num = 100
-    node_dim = 2
-    time = 5
-    dt = 0.05
-
-    sim = simulation(save_path)
-    obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, time, dt)
-
-
-
-

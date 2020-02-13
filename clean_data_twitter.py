@@ -3,15 +3,8 @@
 # Jan 24, 2020
 # Wenbo
 
-
-# from pandas import DataFrame, read_csv
-# import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import re
-# import string
-import gensim
-import pickle
 import os
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from sklearn.cluster import KMeans
@@ -28,11 +21,6 @@ K = 2
 class MyDoc2vec():
 
     def train(self, data):
-        # data = ["I love machine learning. Its awesome.",
-        #         "I love coding in python",
-        #         "I love building chatbots",
-        #         "they chat amagingly well"]
-
         tagged_data = [TaggedDocument(words=word_tokenize(str(_d).lower()), tags=[str(i)]) for i, _d in enumerate(data)]
 
         max_epochs = 10
@@ -202,7 +190,7 @@ def read_data_from_xls(filepath):
     test_num = '5'
 
     # for NC
-    to_obs_1(tweet, usernames, '/Users/woffee/www/ReconstructingNetwork/c_time_state_original_' + test_num + '.txt' )
+    to_obs_1(tweet, usernames, SAVE_PATH + '/c_time_state_original_' + test_num + '.txt' )
 
     # tweets classifications
     d2v = MyDoc2vec()
@@ -212,15 +200,6 @@ def read_data_from_xls(filepath):
     # for this project
     to_obs_2(tweet, usernames, labels, SAVE_PATH + '/obs_' + test_num + '.csv', SAVE_PATH + '/features_' + test_num + '.csv')
 
-    # pca = PCA(n_components=2)
-    # pca.fit(vecs)
-    # X = pca.transform(vecs)
-    #
-    # fig, ax = plt.subplots()
-    # ax.scatter(X[:, 0], X[:, 1], c=labels, alpha=0.5)
-    # ax.grid(True)
-    # fig.tight_layout()
-    # plt.show()
 
 # 从obs中，生成NC需要的数据
 def recovery_process(original, days=3):
@@ -251,13 +230,6 @@ def recovery_process(original, days=3):
 
 def obs_to_nc(test_num, days = 3):
     obs = np.loadtxt(SAVE_PATH + ("/obs_%d.csv" % test_num) , delimiter=',')
-
-    # aa = np.array([[1,2,3],[4,5,6],[7,8,9]])
-    # print(sum(aa[1]))
-    # exit()
-    # print(aa.T)
-    # print(aa[:, 1])
-    # [2 5 8]
 
     obs_2 = []
     for i in range(obs.shape[1]):

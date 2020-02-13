@@ -9,15 +9,15 @@ import matplotlib.ticker as ticker
 def Success_when_Choosing_Different_Time_Steps():
 
     x_obs = [80,90,100,110,120]
-    success_rate_dense =   [0.997502,0.997387,0.997362,0.996846,0.991417] # N=200
-    success_rate_sparse = [0.997485655,0.997290549,0.997785218,0.994571743,0.99259612] # N=200
+    success_rate_dense =   [0.815000,0.785000,0.725000,0.715000,0.560000]  # N=200
+    success_rate_sparse = [0.815000 ,0.715000 ,0.710000 ,0.530000 ,0.475000 ] # N=200
 
     plt.figure(figsize=(10,5))
     # plt.title("Success Rate when Choosing Different Time Steps")
     plt.xlabel("Number of observations", fontsize=15)
     plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-    plt.ylabel("Absolute success rate", fontsize=15)
-    plt.ylim(0.95, 1)
+    plt.ylabel("Success rate", fontsize=15)
+    plt.ylim(0, 1)
     plt.plot(x_obs, success_rate_dense,'-', color='blue', marker='o', label="Weighted dense network")
     plt.plot(x_obs, success_rate_sparse,'-',color='red',  marker='x',label="Weighted sparse network")
     plt.legend()
@@ -29,15 +29,16 @@ def Success_when_Choosing_Different_Time_Steps():
 # Accuracy when Choosing Different Time Steps
 def Accuracy_when_Choosing_Different_Time_Steps():
     x_obs = [80,90,100,110,120]
-    Accuracy_dense =   [0.815000,0.785000,0.725000,0.715000,0.560000] # N=200
-    Accuracy_sparse = [0.815000 ,0.715000 ,0.710000 ,0.530000 ,0.475000 ] # N=200
+    Accuracy_dense =   [0.997502, 0.997387, 0.997362, 0.996846, 0.991417] # N=200
+    Accuracy_sparse = [0.997485655, 0.997290549, 0.997785218, 0.994571743, 0.99259612] # N=200
 
     plt.figure(figsize=(10,5))
 
     plt.xlabel("Number of observations", fontsize=15)
     plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     plt.ylabel("Accuracy", fontsize=15)
-    plt.ylim(0, 1)
+    # plt.ylim(0, 1)
+    plt.ylim(0.95, 1)
     plt.plot(x_obs, Accuracy_dense,'-', color='blue', marker='o', label="Weighted dense network")
     plt.plot(x_obs, Accuracy_sparse,'-',color='red',  marker='x',label="Weighted sparse network")
     plt.legend()
@@ -114,7 +115,7 @@ def Success_rate_when_Choosing_Different_N_and_M():
 
 
 if __name__ == '__main__':
-    # Success_when_Choosing_Different_Time_Steps()
-    # Accuracy_when_Choosing_Different_Time_Steps()
+    Success_when_Choosing_Different_Time_Steps()
+    Accuracy_when_Choosing_Different_Time_Steps()
     Accuracy_when_Choosing_Different_N_and_M()
-    # Success_rate_when_Choosing_Different_N_and_M()
+    Success_rate_when_Choosing_Different_N_and_M()

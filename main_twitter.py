@@ -33,13 +33,6 @@ class MiningHiddenLink:
     def __init__(self, save_path):
         self.save_path = save_path
 
-    # calculate error in 1.5
-    # def get_min_error(self, E1, E2, n, k, t):
-    #     df = (n*k)**2
-    #     tmp = (np.std(E1, dtype=np.float64) + np.std(E2,dtype=np.float64)) * 0.5
-    #     error = tmp**2 * scipy.stats.chi.ppf(0.9, df) / t
-    #     return error
-
 
     def is_constrained(self, E1, E2, min_error):
         e = (np.sum( (E1-E2) ** 2 ))
@@ -83,26 +76,14 @@ class MiningHiddenLink:
 
 
     def square_sum(self, x):
-        # y = np.dot(x,x)
         y = np.sum( x**2 )
-        # print("square_sum: " + str(y))
-        # logging.info("square_sum: " + str(y))
         return y
 
     # 1.4
     def minimizer_L1(self, x):
         D=x[1]
         y=x[0].T
-        # print('D>>>>>>>>>>>>>>>>>>>>>>')
-        # print(D)
-        # print('y>>>>>>>>>>>>>>>>>>>>>>')
-        # print(y)
-        # x0=x[2].reshape(D.shape[1],)-(random.rand(D.shape[1]))/100
         x0=np.ones(D.shape[1],)
-        # print('guess x0>>>>>>>>>>')
-        # print(x0)
-        # print("D:", D.shape)
-        # D: (15, 120)
         if(D.shape[0] < D.shape[1]):
             options = {'maxiter': 10, 'ftol': 1, 'iprint': 1, 'disp': False, 'eps': 1.4901161193847656e-02}
             # less observations than nodes
@@ -155,28 +136,20 @@ class MiningHiddenLink:
 
 
     def save_E(self, E, filepath):
-        # print(E1)
-        # print("E:", len(E), len(E[0]))
         with open(filepath, "w") as f:
             writer = csv.writer(f)
             writer.writerows(E)
-        # print(filepath)
         return filepath
 
     def clear_zeros(self, mitrix):
-        # delete t with all zeros
         all_zero_columns = np.where(~mitrix.any(axis=0))[0]
         res = np.delete(mitrix, all_zero_columns, axis=1)
-        # print("clear 0:")
-        # print(res)
-
         return res
 
 
     # 1.1 & 1.4
     def get_E(self, features, spreading, K, dt=0.01):
         logging.info("dt:" + str(dt))
-        # print("dt:",dt)
         r_matrix = self.get_r_matrix(features, spreading, K, dt)
 
         sum_col = np.sum(r_matrix, axis=0)
@@ -186,27 +159,15 @@ class MiningHiddenLink:
                 deleted.append([i])
         r_matrix = np.delete(r_matrix, deleted, axis=1) # delete columns where all 0
         logging.info("r_matrix_deleted:" + str(deleted))
-
-        # print("r_matrix: ", r_matrix.shape)
         logging.info("r_matrix.shape: " + str( r_matrix.shape))
-
-        # spreading = spreading[subT, :]
         spreading = np.delete(spreading, deleted, axis=0)
         spreading = np.delete(spreading, -1, axis=0)
 
         logging.info("features.shape:" + str(features.shape))
         logging.info("spreading.shape:" + str(spreading.shape))
-        # logging.info("subT:" + str(subT))
-
-        # np.savetxt(save_path + 'to_file_spreading_' + rundate + ".txt", spreading)
-        # np.savetxt(save_path + 'to_file_r_matrix_' + rundate + ".txt", r_matrix)
 
         cores = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=cores)
-
-
-        # spreading = np.delete(spreading, -1, axis=0)
-        # spreading = clear_zeros(spreading)
 
         xit_all = []
         for r_xit in r_matrix:
@@ -222,7 +183,6 @@ class MiningHiddenLink:
         feature_sample = pd.read_csv(feature_filepath, header=None)
         spreading_sample = pd.read_csv(obs_filepath, header=None)
 
-        # feature_sample = np.array(feature_sample)
         spreading_sample = np.array(spreading_sample)
 
         E = self.get_E(feature_sample, spreading_sample, K, dt)

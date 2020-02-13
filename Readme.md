@@ -1,4 +1,4 @@
-## Combine heterogeneity of text into the rumor propagation dynamics
+## Reconstructing rumor propagation networks withheterogeneous agents and text contents
 
 ### Test with synthetic data
 
