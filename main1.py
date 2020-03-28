@@ -340,7 +340,7 @@ class MiningHiddenLink:
 		feature_sample, spreading_sample = self.read_data_from_simulation(obs_filepath, true_net_filepath, K,
 																		sample_size=nodes_num)
 		E = self.get_E(feature_sample, spreading_sample, K, dt)
-		E_filepath = self.save_E(E, self.save_path + "to_file_E_" + rundate + ".csv")
+		E_filepath = self.save_E(E, self.save_path + "to_file_E.csv")
 		logging.info(E_filepath)
 		return E_filepath
 
@@ -391,35 +391,48 @@ if __name__ == '__main__':
 		logging.info("step 1: Generate simulation data done")
 
 		# 2 Estimate the edge matrix E
-		logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
-		current_time = datetime.now()
-		e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
-		logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
-		logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
+		e_filepath = save_path + "to_file_E.csv"
+		if not os.path.exists(e_filepath):
+			logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
+			current_time = datetime.now()
+			e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
+			logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
+			logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
+		else:
+			print("E existed")
 		logging.info("step 2: " + e_filepath)
 
 		# 3 Process data files
-		true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
-		true_net = pd.read_csv(true_net_filepath, sep=',')
-		hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
-		true_net['e'] = hidden_link.values.flatten()
-		true_net.to_csv(true_net_re_filepath, header=True, index=None)
+		true_net_re_filepath = save_path + "to_file_true_net_re.csv"
+		if not os.path.exists(true_net_re_filepath):
+			true_net = pd.read_csv(true_net_filepath, sep=',')
+			hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
+			true_net['e'] = hidden_link.values.flatten()
+			true_net.to_csv(true_net_re_filepath, header=True, index=None)
 		logging.info("step 3: " + true_net_re_filepath)
 
 		# 4 Estimate the observation data with E
-		obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, time, dt, true_net_re_filepath)
-		logging.info("step 4: " + obs_filepath_2)
-		logging.info("step 4: " + true_net_filepath_2)
+		obs_filepath_2 = save_path + 'obs_' + str(nodes_num) + "x" + str(obs_num) + '_estimate.csv'
+		true_net_filepath_2 = save_path + 'true_net_' + str(nodes_num) + "x" + str(obs_num) + '_estimate.csv'
+		if not os.path.exists(obs_filepath_2) or not os.path.exists(true_net_filepath_2):
+			sim.do(K, nodes_num, node_dim, time, dt, true_net_re_filepath)
+		else:
+			print("estimated data existed")
+		logging.info("step 4: estimate data done")
 
 
 		# 5 Assess accuracy
 		a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
 		print("success rate:", a1)
-		logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
+		logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " success rate: " + str(a1))
 
-		# obs_filepath_2 = '/Users/woffee/www/rrpnhat/data/500x100/obs_500x100_estimate.csv'
-		# true_net_filepath_2 = '/Users/woffee/www/rrpnhat/data/500x100/true_net_500x100_estimate.csv'
+		a3 = ac.get_accuracy3(obs_filepath, obs_filepath_2)
+		print("deviation:", a3)
+		logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " deviation: " + str(a3))
+
 		a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
 		print("accuracy:", a2)
-		logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
+		logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy: " + str(a2))
+
+
 

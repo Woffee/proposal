@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import numpy as np
 import os
@@ -117,7 +120,7 @@ class accuracy:
         t_near = []
 
         for i in range(len(data_o)):
-            # print(i)
+            print(i)
             if (data_o[i] == data_e[i]).all():
                 x_near.append(data_o[i, 0])
                 y_near.append(data_o[i, 1])
@@ -162,8 +165,34 @@ class accuracy:
         accuracy = (accuracy_x + accuracy_y + accuracy_n1 + accuracy_n2 + accuracy_t) / 5
         return accuracy
 
+    def merge(self, obs):
+        obs_2 = []
+        for i in range(obs.shape[1]):
+            if i % 2 == 0:
+                a = obs[:, i]
+                b = obs[:, i + 1]
+                # print(a)
+                # print(b)
+                obs_2.append(a + b)
+        obs_2 = np.array(obs_2).T
+        return obs_2
 
+    def get_accuracy3(self, fp_obs_o, fp_obs_e):
+        obs_o = np.loadtxt(fp_obs_o, delimiter=',')
+        obs_e = np.loadtxt(fp_obs_e, delimiter=',')
 
+        obs_o = self.merge(obs_o)
+        obs_e = self.merge(obs_e)
+
+        print(obs_e.shape)
+        ss = 0
+        for i in range(obs_o.shape[1]):
+            # print(i)
+            oo = obs_o[:, i]
+            ee = obs_e[:, i]
+            mm = oo - ee
+            ss = ss + sum(mm ** 2)
+        return 1.0 * ss / (obs_o.shape[0] * obs_o.shape[1])
 
 
 

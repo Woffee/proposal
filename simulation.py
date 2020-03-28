@@ -54,7 +54,7 @@ class simulation:
                                                   true_net=False, hidden_network_fun=val_hidden)
         obs_t = time_line
         obs = solutions
-        net_hidden = network.net2
+        # net_hidden = network.net2
         # hidden_network=network.network_func(evl,val_hidden)
 
         net1 = network.net1
@@ -66,11 +66,11 @@ class simulation:
         desc = str(nodes_num) + 'x' + str(int(time / dt))
         rundate = t_module.strftime("%m%d%H%M", t_module.localtime())
         if filepath and os.path.exists(filepath):
-            obs_filepath = self.save_path + 'obs_' + desc + '_estimate_' + rundate + '.csv'
-            true_net_filepath = self.save_path + 'true_net_' + desc + '_estimate_' + rundate + '.csv'
+            obs_filepath = self.save_path + 'obs_' + desc + '_estimate.csv'
+            true_net_filepath = self.save_path + 'true_net_' + desc + '_estimate.csv'
         else:
-            obs_filepath = self.save_path + 'obs_' + desc + '_original_' + rundate + '.csv'
-            true_net_filepath = self.save_path + 'true_net_' + desc + '_original_' + rundate + '.csv'
+            obs_filepath = self.save_path + 'obs_' + desc + '_original.csv'
+            true_net_filepath = self.save_path + 'true_net_' + desc + '_original.csv'
 
         pd.DataFrame(obs).to_csv(obs_filepath, index=None)
         true_net.to_csv(true_net_filepath, index=None)

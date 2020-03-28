@@ -13,6 +13,7 @@ from scipy.stats import norm
 from block import *
 # from numba import jit
 import numpy as np
+import random as rand
 
 class network_estimation:
     def __init__(self, time, dt, nodes, val_hidden, trails=500, band_power=0.4, K=2):
@@ -119,9 +120,9 @@ class network_estimation:
         mu, sigma = 0, 1
         sampleNo = 10000000
         np.random.seed(10)
-        rd.seed(10)
+        rand.seed(10)
         s = np.random.normal(mu, sigma, sampleNo)
-        ss = rd.sample(list(s), (nodes_num * nodes_num))
+        ss = rand.sample(list(s), (nodes_num * nodes_num))
         ss = np.array(ss).reshape(nodes_num, nodes_num)
         return ss
 
