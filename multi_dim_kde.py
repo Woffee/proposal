@@ -1,9 +1,9 @@
 from numpy import *
-from numba import jit
-@jit
+# from numba import jit
+# @jit
 def sum_vec(v1,v2):
 	return v1+v2
-@jit
+# @jit
 def gaussiankernel(x,z,args,N):
 	if N==1:
 		sigma = args
@@ -17,7 +17,7 @@ def gaussiankernel(x,z,args,N):
 		
 		y = 1./(2.*pi)**(N/2.)*abs(linalg.det(sigma))**(-1.)*exp((-1./2.)*dot((x-z)**2,array(cov)))
 	return y
-@jit
+# @jit
 def kde2(xdata,xeval,N,ndata,neval,kernel=gaussiankernel,kernelpars=[1.]):
 	if N==1:
 		if neval>=ndata:
