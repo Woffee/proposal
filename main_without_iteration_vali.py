@@ -54,7 +54,7 @@ def minimizer_L1(x):
 
 
     x_val = None
-    scale = 2
+    scale = 1
     while x_val is None and scale < 16:
         x = cp.Variable(D.shape[1])
         objective = cp.Minimize(cp.sum(cp.abs(x)) / (float(D.shape[1]) ** scale))
@@ -63,7 +63,7 @@ def minimizer_L1(x):
 
         prob = cp.Problem(objective, constraints)
         # ECOS, OSQP, SCS
-        result = prob.solve(verbose=True, solver='SCS')
+        result = prob.solve(verbose=True, solver='SCS', feastol=1e-9)
         x_val = x.value
 
         scale += 0.1
@@ -73,6 +73,45 @@ def minimizer_L1(x):
     # print 'optimal val :', result
     # return np.append(np.zeros(pshape), x.value)  # .reshape(self.pshape+D.shape[1],1)
     return x.value
+
+
+def gaussiankernel(x, z, args, N):
+    if N == 1:
+        sigma = args
+        y = (1. / math.sqrt(2. * math.pi) / sigma) * math.exp(-(x - z) ** 2 / (2. * sigma ** 2))
+    else:
+        sigma = args
+        cov = []
+        for j in range(N):
+            cov += [1. / sigma[j, j] ** 2]
+        N = float(N)
+
+        y = 1. / (2. * math.pi) ** (N / 2.) * abs(np.linalg.det(sigma)) ** (-1.) * math.exp(
+            (-1. / 2.) * np.dot((x - z) ** 2, np.array(cov)))
+    return y
+
+# 1.1 & 1.3
+def get_r_xit(x, i, t_l, features, spreading, K, T, bandwidth, dt):
+    numerator = 0.0
+    denominator = 0.0
+    # print(features.shape)
+    for j in range(features.shape[0]):
+        x_j = features.iloc[j]
+        g = gaussiankernel(x, x_j, bandwidth, features.shape[1])
+        tmp = spreading[t_l+1][j*K+i] - spreading[t_l][j*K+i]
+        numerator = numerator + (1.0*g*tmp)
+        denominator = denominator + (g*(T[t_l+1]-T[t_l])*dt)
+    return numerator/denominator
+
+def get_r_row(args):
+    # features.iloc[x], i, features, spreading, K, T, bandwidth, dt
+    fea, i, features, spreading, K, T, bandwidth, dt = args
+
+    row = []
+    for t in range(len(T) - 1):
+        r_xit = get_r_xit(fea, i, t, features, spreading, K, T, bandwidth, dt)
+        row.append(r_xit)
+    return row
 
 class MiningHiddenLink:
     def __init__(self, save_path):
@@ -92,20 +131,7 @@ class MiningHiddenLink:
         return e < min_error
 
 
-    def gaussiankernel(self, x, z, args, N):
-        if N == 1:
-            sigma = args
-            y = (1. / math.sqrt(2. * math.pi) / sigma) * math.exp(-(x - z) ** 2 / (2. * sigma ** 2))
-        else:
-            sigma = args
-            cov = []
-            for j in range(N):
-                cov += [1. / sigma[j, j] ** 2]
-            N = float(N)
 
-            y = 1. / (2. * math.pi) ** (N / 2.) * abs(np.linalg.det(sigma)) ** (-1.) * math.exp(
-                (-1. / 2.) * np.dot((x - z) ** 2, np.array(cov)))
-        return y
 
 
     def lasso(self, x, D, y):
@@ -167,34 +193,36 @@ class MiningHiddenLink:
         return features, spreading_sample, T
 
 
-    # 1.1 & 1.3
-    def get_r_xit(self, x, i, t_l, features, spreading, K, T, bandwidth, dt):
-        numerator = 0.0
-        denominator = 0.0
-        # print(features.shape)
-        for j in range(features.shape[0]):
-            x_j = features.iloc[j]
-            g = self.gaussiankernel(x, x_j, bandwidth, features.shape[1])
-            tmp = spreading[t_l+1][j*K+i] - spreading[t_l][j*K+i]
-            numerator = numerator + (1.0*g*tmp)
-            denominator = denominator + (g*(T[t_l+1]-T[t_l])*dt)
-        return numerator/denominator
 
 
     def get_r_matrix(self, features, spreading, T, K=2, dt=0.01):
         bandwidth = np.diag(np.ones(features.shape[1]) * float(features.shape[0]) ** (-1. / float(features.shape[1] + 1)))
 
-        r_matrix = []
+        # 单线程 版本
+        # r_matrix = []
+        # for x in range(features.shape[0]):
+        #     # print("get_r_matrix now x:",x)
+        #     for i in range(K):
+        #         row = []
+        #         for t in range(len(T) - 1):
+        #             r_xit = self.get_r_xit(features.iloc[x], i, t, features, spreading, K, T, bandwidth, dt)
+        #             row.append(r_xit)
+        #         r_matrix.append(row)
+
+        cores = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(processes=cores)
+
+        print("get_r_matrix, cores:%d" % cores)
+        logging.info("get_r_matrix, cores:%d" % cores)
+
+        param_list = []
         for x in range(features.shape[0]):
             # print("get_r_matrix now x:",x)
             for i in range(K):
-                row = []
-                for t in range(len(T)-1):
-                    r_xit = self.get_r_xit(features.iloc[x], i, t, features, spreading, K, T, bandwidth, dt)
-                    row.append(r_xit)
-                r_matrix.append(row)
-                # print(row)
+                args = [ features.iloc[x], i, features, spreading, K, T, bandwidth, dt ]
+                param_list.append(args)
 
+        r_matrix = pool.map(get_r_row, param_list)
         return np.array(r_matrix)
 
 
