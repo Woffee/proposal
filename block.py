@@ -8,9 +8,9 @@ from multi_dim_kde import *
 # import datetime
 # import time
 # from scipy.stats import norm
-from numba import jit,generated_jit
+# from numba import jit,generated_jit
 rd=True
-@jit
+# @jit
 def block_model(val_hidden,nodes,block_dim):
 	prob=val_hidden[:nodes.shape[0]*block_dim].reshape(block_dim,nodes.shape[0])
 	block_matrix=val_hidden[nodes.shape[0]*block_dim:].reshape(block_dim,block_dim)
@@ -25,7 +25,7 @@ def block_model(val_hidden,nodes,block_dim):
 	prob=dot(prob.T,block_matrix).dot(prob)
 	return prob
 
-@jit
+# @jit
 def cluster_model(val_hidden,nodes,block_dim):
 	prob=val_hidden[:nodes.shape[0]*block_dim].reshape(block_dim,nodes.shape[0])
 	print(len(val_hidden),nodes.shape[0]*block_dim)
@@ -43,10 +43,10 @@ def cluster_model(val_hidden,nodes,block_dim):
 	return prob
 
 
-@jit
+# @jit
 def ss(a,b):
 	return a+b
-@jit
+# @jit
 def model_with_covariate(net,coef,nodes,covariates,iter_var):
 	prob=net
 	coef=coef
@@ -62,12 +62,12 @@ def model_with_covariate(net,coef,nodes,covariates,iter_var):
 		 
 		new=append(new,c)
 	return new/float(len(iter_var))	
-@jit
+# @jit
 def normal_model(net,coef,nodes,covariates,iter_var):
 	#print net.shape,iter_var.shape
 	new=dot(net,iter_var)
 	return new/float(len(iter_var))
-@jit
+# @jit
 def normal_model_randv(net,coef,nodes,covariates,iter_var):
 	new=[]
 	for i in range(iter_var.shape[0]):
@@ -75,7 +75,7 @@ def normal_model_randv(net,coef,nodes,covariates,iter_var):
 		b=iter_var[k]
 		new+=[net[i,k]*b]
 	return array(new)
-@jit
+# @jit
 def model_with_covariate_randv(net,coef,nodes,covariates,iter_var):
 	prob=net
 	coef=coef
@@ -96,7 +96,7 @@ def model_with_covariate_randv(net,coef,nodes,covariates,iter_var):
 	return new	
 
 
-@jit
+# @jit
 def network_func(data_point,binary_val,inp):
 	if len(binary_val.shape)==1:
 		print("=============== 08-3-1")
@@ -136,7 +136,7 @@ def network_func(data_point,binary_val,inp):
 	
 		func1+=[mean(val*gaussiankernel(inp[i],data,args=diag(ones(data.shape[1])*float(data.shape[0])**(-1./float(data.shape[1]+1))),N=data.shape[1])/dens[i])]
 	return array(func1)    
-@jit	
+# @jit	
 def convert_net_to_func(nodes,edges):
 	## NOTE: convert the nodes-edges specification of a network to its nodes-adjacancy matrix specification ##
 	func=[]
@@ -167,7 +167,7 @@ def convert_net_to_func(nodes,edges):
 			func1.append(val)
 		func.append(func1)
 	return array(func)
-@jit
+# @jit
 def generate_network(data_point,network):
 	net1=[]      
 	for i in range(data_point.shape[0]):
@@ -177,7 +177,7 @@ def generate_network(data_point,network):
 		net1.append(net11)
 	net1=array(net1)
 	return net1
-@jit
+# @jit
 def sample_net(val_hidden,nodes,block_dim,evl):
 	hidden_network=network_func(evl,val_hidden,nodes)
 	#net2=generate_network(nodes,hidden_network)
@@ -185,11 +185,11 @@ def sample_net(val_hidden,nodes,block_dim,evl):
 
 
 # here is net_fun
-@jit
+# @jit
 def norm_net(val_hidden,nodes,block_dim):
 	net2=val_hidden.reshape(nodes.shape[0],nodes.shape[0])
 	return net2
-@jit
+# @jit
 def solve_ode(initial,net1,covar,covariates,data_point,time,dt,iter_fun,rd):
 	## NOTE: numerically solve the mean-field equation and generate pdf of observations ##
 	time_line=append(zeros(1),cumsum(dt*ones(int(time/dt))))
@@ -215,7 +215,7 @@ def solve_ode(initial,net1,covar,covariates,data_point,time,dt,iter_fun,rd):
 	return solutions,time_line
     
 
-@jit    	
+# @jit    	
 def likelihood(obs,obs_t,val_hidden,net1,evl,nodes,nodes1,initial,time,dt,covariates,net_fun,cov_dim,iter_fun,block_dim,rd=True):
 	## NOTE: construct likelihood function from simulation and observation ##
 	# nodes are a set of nodes whose infection stauts are observable at all obs_t, nodes are represented as an n x d dimensional matrix, n is the number of nodes, d is the dimension of features of node
@@ -299,13 +299,13 @@ def likelihood(obs,obs_t,val_hidden,net1,evl,nodes,nodes1,initial,time,dt,covari
 			PP.append(Prob)
 		Prob=sum(PP)
 	return [Prob,net12,net2]
-@jit
+# @jit
 def index(time_line,to_be_convert):
 	# NOTE: when a time point in obs_t is not contained in the time_line generated from method 'solve_ode', select the time point in time_line that is closest to the given observation time
 	time_line=outer(time_line,ones_like(to_be_convert))
 	time_line-=to_be_convert
 	return argmin(absolute(time_line),axis=0)
-@jit
+# @jit
 def simulation(self,val_hidden,edges,nodes,evl,initial,time,dt,block_dim,covariates,model_type,net1=None,net2=None,true_net=True,hidden_network_fun=None):
 	# NOTE: only applicable to simulation study, simulate the spreading process and generate the time sequence of 0-1 vector of infected status from the given mean-field model
 	if model_type==1:#normal model with sampled value
