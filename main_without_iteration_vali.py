@@ -31,6 +31,8 @@ import logging
 from datetime import datetime
 import cvxpy as cp
 
+r_matrix_result_list = []
+
 # 1.4
 # In particular, functions are only picklable if they are defined at the top-level of a module.
 def minimizer_L1(x):
@@ -103,15 +105,21 @@ def get_r_xit(x, i, t_l, features, spreading, K, T, bandwidth, dt):
         denominator = denominator + (g*(T[t_l+1]-T[t_l])*dt)
     return numerator/denominator
 
+def log_result(result):
+    # This is called whenever foo_pool(i) returns a result.
+    # result_list is modified only by the main process, not the pool workers.
+    r_matrix_result_list.append(result)
+
 def get_r_row(args):
     # features.iloc[x], i, features, spreading, K, T, bandwidth, dt
-    fea, i, features, spreading, K, T, bandwidth, dt = args
-
+    index, fea, i, features, spreading, K, T, bandwidth, dt = args
     row = []
     for t in range(len(T) - 1):
         r_xit = get_r_xit(fea, i, t, features, spreading, K, T, bandwidth, dt)
         row.append(r_xit)
-    return row
+    return [index, row]
+
+
 
 class MiningHiddenLink:
     def __init__(self, save_path):
@@ -197,32 +205,41 @@ class MiningHiddenLink:
 
     def get_r_matrix(self, features, spreading, T, K=2, dt=0.01):
         bandwidth = np.diag(np.ones(features.shape[1]) * float(features.shape[0]) ** (-1. / float(features.shape[1] + 1)))
+        start = time.time()
 
         # 单线程 版本
         # r_matrix = []
         # for x in range(features.shape[0]):
-        #     # print("get_r_matrix now x:",x)
+        #     print("get_r_matrix now x:",x)
         #     for i in range(K):
         #         row = []
         #         for t in range(len(T) - 1):
-        #             r_xit = self.get_r_xit(features.iloc[x], i, t, features, spreading, K, T, bandwidth, dt)
+        #             r_xit = get_r_xit(features.iloc[x], i, t, features, spreading, K, T, bandwidth, dt)
         #             row.append(r_xit)
         #         r_matrix.append(row)
 
         cores = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=cores)
-
         print("get_r_matrix, cores:%d" % cores)
         logging.info("get_r_matrix, cores:%d" % cores)
 
-        param_list = []
         for x in range(features.shape[0]):
             # print("get_r_matrix now x:",x)
             for i in range(K):
-                args = [ features.iloc[x], i, features, spreading, K, T, bandwidth, dt ]
-                param_list.append(args)
+                pool.apply_async( get_r_row, ([ x*2 + i, features.iloc[x], i, features, spreading, K, T, bandwidth, dt ],) , callback = log_result)
 
-        r_matrix = pool.map(get_r_row, param_list)
+        pool.close()
+        pool.join()
+
+        end = time.time()
+        logging.info("time for r_matrix: {} seconds".format((end - start)))
+        print("get r_matrix done")
+
+
+        global r_matrix_result_list
+        r_matrix_result_list = sorted(r_matrix_result_list, key=lambda k: k[0] )
+        r_matrix = [ row[1] for row in r_matrix_result_list ]
+
         return np.array(r_matrix)
 
 
@@ -322,16 +339,16 @@ if __name__ == '__main__':
     K = 2
     nodes_num = 100
     node_dim = 2
-    time = 7.5
+    ttime = 7.5
     dt = 0.05
 
     # If you want to do more tests, just add parameters in this list.
     test = [
-        [100, 100],
+        [180, 120],
     ]
     for nodes_num, obs_num in test:
-        time = 1.0 * obs_num * dt
-        print(nodes_num, obs_num, time)
+        ttime = 1.0 * obs_num * dt
+        print(nodes_num, obs_num, ttime)
         logging.info("start: " + str(nodes_num) + "x" + str(obs_num))
 
         save_path = BASE_DIR + '/data/' + str(nodes_num) + "x" + str(obs_num)
@@ -344,14 +361,14 @@ if __name__ == '__main__':
         ac = accuracy(save_path)
 
         # 1 Generate simulation data
-        obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, time, dt)
+        obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, ttime, dt)
         logging.info("step 1: " + obs_filepath)
         logging.info("step 1: " + true_net_filepath)
 
         # 2 Estimate the edge matrix E
         logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
         current_time = datetime.now()
-        e_filepath = mhl.do(nodes_num, K, int(time/dt), 0.05, obs_filepath, true_net_filepath)
+        e_filepath = mhl.do(nodes_num, K, int(ttime/dt), 0.05, obs_filepath, true_net_filepath)
         logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
         logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
         logging.info("step 2: " + e_filepath)
@@ -365,7 +382,7 @@ if __name__ == '__main__':
         logging.info("step 3: " + true_net_re_filepath)
 
         # 4 Estimate the observation data with E
-        obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, time, dt, true_net_re_filepath)
+        obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath)
         logging.info("step 4: " + obs_filepath_2)
         logging.info("step 4: " + true_net_filepath_2)
 
