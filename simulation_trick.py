@@ -99,7 +99,7 @@ class network_estimation:
         time_line = append(zeros(1), cumsum(dt * ones(int(ttime / dt))))
         solutions = [initial]
         t = 1
-        random.seed(1)
+        # random.seed(1)
         while t < len(time_line):
             # print 'simulation ',t,'-th run'
             current = solutions[-1]
@@ -119,8 +119,8 @@ class network_estimation:
         print("generate_network normal_distribtution,", nodes_num)
         mu, sigma = 0, 1
         sampleNo = 10000000
-        np.random.seed(10)
-        rand.seed(10)
+        # np.random.seed(10)
+        # rand.seed(10)
         s = np.random.normal(mu, sigma, sampleNo)
         ss = rand.sample(list(s), (nodes_num * nodes_num))
         ss = np.array(ss).reshape(nodes_num, nodes_num)
