@@ -30,6 +30,7 @@ from accuracy2 import accuracy
 import logging
 from datetime import datetime
 import cvxpy as cp
+import argparse
 
 r_matrix_result_list = []
 
@@ -327,70 +328,77 @@ class MiningHiddenLink:
 
 if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    save_path = BASE_DIR + '/data/'
     rundate = time.strftime("%m%d%H%M", time.localtime())
-    # to_file = save_path + "to_file_" + rundate + ".csv"
-    today = time.strftime("%Y-%m-%d", time.localtime())
+    today = time.strftime("%Y-%m-%d-%H-%M", time.localtime())
+    default_log_file = BASE_DIR + '/' + today + '.log'
+
+
+    parser = argparse.ArgumentParser(description='Test for argparse')
+    parser.add_argument('--log', '-l', help='log', default= default_log_file )
+    parser.add_argument('--nodes_num', '-n', help='nodes_num', type=int, default=100)
+    parser.add_argument('--obs_num', '-o', help='obs_num', type=int, default=80)
+    args = parser.parse_args()
+
+
+
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(filename)s line: %(lineno)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        filename=BASE_DIR + '/log/' + today + '.log')
+                        filename=args.log)
+
+    print(args)
 
     K = 2
-    nodes_num = 100
+    nodes_num = args.nodes_num
+    obs_num = args.obs_num
+
     node_dim = 2
-    ttime = 7.5
     dt = 0.05
 
-    # If you want to do more tests, just add parameters in this list.
-    test = [
-        [180, 120],
-    ]
-    for nodes_num, obs_num in test:
-        ttime = 1.0 * obs_num * dt
-        print(nodes_num, obs_num, ttime)
-        logging.info("start: " + str(nodes_num) + "x" + str(obs_num))
+    ttime = 1.0 * obs_num * dt
+    print(nodes_num, obs_num, ttime)
+    logging.info("start: " + str(nodes_num) + "x" + str(obs_num))
 
-        save_path = BASE_DIR + '/data/' + str(nodes_num) + "x" + str(obs_num)
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-        save_path = save_path + "/"
+    save_path = BASE_DIR + '/data/' + str(nodes_num) + "x" + str(obs_num)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+    save_path = save_path + "/"
 
-        sim = simulation(save_path)
-        mhl = MiningHiddenLink(save_path)
-        ac = accuracy(save_path)
+    sim = simulation(save_path)
+    mhl = MiningHiddenLink(save_path)
+    ac = accuracy(save_path)
 
-        # 1 Generate simulation data
-        obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, ttime, dt)
-        logging.info("step 1: " + obs_filepath)
-        logging.info("step 1: " + true_net_filepath)
+    # 1 Generate simulation data
+    obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, ttime, dt)
+    logging.info("step 1: " + obs_filepath)
+    logging.info("step 1: " + true_net_filepath)
 
-        # 2 Estimate the edge matrix E
-        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
-        current_time = datetime.now()
-        e_filepath = mhl.do(nodes_num, K, int(ttime/dt), 0.05, obs_filepath, true_net_filepath)
-        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
-        logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
-        logging.info("step 2: " + e_filepath)
+    # 2 Estimate the edge matrix E
+    logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
+    current_time = datetime.now()
+    e_filepath = mhl.do(nodes_num, K, int(ttime/dt), 0.05, obs_filepath, true_net_filepath)
+    logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
+    logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
+    logging.info("step 2: " + e_filepath)
 
-        # 3 Process data files
-        true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
-        true_net = pd.read_csv(true_net_filepath, sep=',')
-        hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
-        true_net['e'] = hidden_link.values.flatten()
-        true_net.to_csv(true_net_re_filepath, header=True, index=None)
-        logging.info("step 3: " + true_net_re_filepath)
+    # 3 Process data files
+    true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
+    true_net = pd.read_csv(true_net_filepath, sep=',')
+    hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
+    true_net['e'] = hidden_link.values.flatten()
+    true_net.to_csv(true_net_re_filepath, header=True, index=None)
+    logging.info("step 3: " + true_net_re_filepath)
 
-        # 4 Estimate the observation data with E
-        obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath)
-        logging.info("step 4: " + obs_filepath_2)
-        logging.info("step 4: " + true_net_filepath_2)
+    # 4 Estimate the observation data with E
+    obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath)
+    logging.info("step 4: " + obs_filepath_2)
+    logging.info("step 4: " + true_net_filepath_2)
 
-        # 5 Assess accuracy
-        a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
-        a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
-        print("accuracy1:", a1)
-        print("accuracy2:", a2)
-        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
-        logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
+    # 5 Assess accuracy
+    a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
+    a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
+    print("accuracy1:", a1)
+    print("accuracy2:", a2)
+    logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
+    logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
 
