@@ -12,8 +12,7 @@ import matplotlib.patches as mpatches
 from scipy.special import binom
 import matplotlib.cm as cmaps
 import matplotlib.colors as colours
-from mpl_toolkits.basemap import Basemap
-
+import math
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -113,8 +112,6 @@ for index, row in data.iterrows():
 
     i1 = get_closest( tuple( [row['long1'], row['lat1']] ) )
     i2 = get_closest( tuple( [row['long2'], row['lat2']] ) )
-    if i1==i2:
-        continue
 
     weights[i1][i2] = weights[i1][i2] + row['e']
     # max_weight = max(max_weight, weights[i1][i2])
@@ -130,9 +127,11 @@ for i in range(total_points):
 
 arrow_list = sorted(arrow_list, key=lambda k: k[0] )
 
-# 只画top100的箭头
-for row in arrow_list[-100:]:
+# 只画top50的箭头
+for row in arrow_list[-70:]:
     weight, i, j = row
+    if i == j:
+        continue
     w = weight / max_weight
 
     if w < 0.2:
@@ -173,13 +172,51 @@ cities = cities[:-1]
 # 画地点
 x = np.array([ b for a,b,_ in cities])
 y = np.array([ a for a,b,_ in cities])
-plt.scatter(x, y, s=8, marker='o', c='gray', zorder=30)
+s = []
+ww = []
+
+# 6.068425588110922
+# 6.276643489207005
+# 6.202535517055394
+# 6.560286478317523
+max_weight2 = 6.560286478317523
+ww = []
+for i in range(len(cities)):
+    if weights[i][i]>0:
+        w = math.log(weights[i][i]) / max_weight2
+    else:
+        w = 0.1
+    ww.append(w)
+    if w < 0.2:
+        ss = 8
+    elif w < 0.4:
+        ss = 16
+    elif w < 0.6:
+        ss = 24
+    elif w < 0.8:
+        ss = 32
+    else:
+        ss = 40
+    s.append( ss )
+
+plt.scatter(x, y, s=s, marker='o', c='gray', zorder=30)
 
 # 画地名
 
 city_names = [ r[2] for r in cities]
 for i in range(len(cities)):
-    plt.text( x[i], y[i]+0.5, city_names[i], horizontalalignment='center', zorder=40)
+    w = ww[i]
+    if w < 0.2:
+        ss = 8
+    elif w < 0.4:
+        ss = 9
+    elif w < 0.6:
+        ss = 10
+    elif w < 0.8:
+        ss = 11
+    else:
+        ss = 12
+    plt.text( x[i], y[i]+0.5, city_names[i], horizontalalignment='center', zorder=40, fontsize=ss)
 
 # points = sorted(points, key=lambda k: k[0])
 
