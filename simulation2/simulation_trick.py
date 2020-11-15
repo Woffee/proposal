@@ -10,7 +10,7 @@ Created on Tue Sep 04 15:16:11 2018
 # from multi_dim_kde import *
 # import datetime
 from scipy.stats import norm
-from block import *
+from simulation2.block import *
 # from numba import jit
 import numpy as np
 import random as rand

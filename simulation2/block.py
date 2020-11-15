@@ -4,7 +4,7 @@
 # from queue import Queue
 # from numpy import *
 # import pandas as pd
-from multi_dim_kde import *
+from simulation2.multi_dim_kde import *
 # import datetime
 # import time
 # from scipy.stats import norm

@@ -5,7 +5,7 @@
 Version 3.
 Test with known classifications. Ignore the iteration.
 
-works fine on huge node_nums
+适合节点数大的情况。
 """
 
 import pandas as pd
@@ -27,7 +27,7 @@ from scipy.optimize import Bounds
 
 # import random
 # from clean_data import Clean_data
-from simulation import simulation
+from simulation2.simulation import simulation
 from accuracy2 import accuracy
 import logging
 from datetime import datetime
