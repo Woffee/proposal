@@ -16,7 +16,7 @@ import numpy as np
 import random as rand
 
 class network_estimation:
-    def __init__(self, time, dt, nodes, val_hidden, trails=500, band_power=0.4, K=2):
+    def __init__(self, time, dt, nodes, val_hidden, trails=500, band_power=0.4, K=2, seed=1):
         # NOTE: initialize a coup of parameters
         self.time = time  # upper bound of simulation interval
         self.dt = dt  # simulation time interval
@@ -31,6 +31,7 @@ class network_estimation:
         self.net11 = None  # observable network
         self.band_power = band_power  # kernel bandwidth
         self.K = K
+        self.seed=seed
 
     def simulation(self, val_hidden, nodes, initial, ttime, dt, block_dim, covariates, model_type, net1=None, net2=None,
                    true_net=True, hidden_network_fun=None):
@@ -99,14 +100,21 @@ class network_estimation:
         time_line = append(zeros(1), cumsum(dt * ones(int(ttime / dt))))
         solutions = [initial]
         t = 1
-        # random.seed(1)
+        random.seed(1)
+        rand_nums = []
+        length = len(initial)
+        for i in range(len(time_line) + 20 + self.seed):
+            rand_nums.append(random.rand(length))
+        tmp_index = random.randint(5, len(time_line))
+        rand_nums[tmp_index] = random.rand(length)
+
         while t < len(time_line):
             # print 'simulation ',t,'-th run'
             current = solutions[-1]
             # print(current)
             delta = iter_fun(net1, coef, nodes, covariates, current)
             convert_rate = exp(-exp(delta) * dt)
-            rand_num = random.rand(len(current))
+            rand_num=rand_nums[t-1]
             solutions.append(current + (rand_num > convert_rate).astype(int))
             t += 1
 

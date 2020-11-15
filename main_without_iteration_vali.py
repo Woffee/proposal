@@ -4,6 +4,30 @@
 """
 Version 3.
 Test with known classifications. Ignore the iteration.
+
+======= Nov 13, 2020 =======
+
+另外 为了提高计算速度 我建议你synthetic data就生成一次 估计也就做一次，基于估计的模拟多做几次（十次），
+然后把每次的模拟结果和synthetic data比 计算准确度就可以了
+
+其实我们的随机性主要来自于基于估计网络的模拟和最初生成synthetic data的模拟  都是随机的
+因此 二者之差也是随机的 如果我们估计准确的话  只对一端做多次模拟求平均 也应该可以剔除一定的随机性的
+
+为了速度 我们先做这个简单的吧
+
+具体到我们的场景就是，
+
+【1 数据阶段】生成一次已知的网络 E，基于这个网络 生成一组diffusion数据 D。
+
+【2 实验阶段】基于数据估计一次网络 E'，然后基于估计网络 E' 反复生成模拟diffusion数据 D'_1, D'_2, D'_3...
+
+【3 评估阶段】把反复生成的多个 diffusion数据 D' 与上面生成的一组真实diffusion数据 D 做对比，对比结果求平均
+
+原则上应该 真实的diffusion数据和模拟的diffusion数据都反复生成 但是只做模拟diffusion反复生成可以提升速度
+而且也可以在一定程度上消除随机性
+
+而且如果考虑现实data 而不是这种实验data， 真实的diffusion也只可能有一组  所以我们就先按这个简化版来做
+
 """
 
 import pandas as pd
@@ -329,7 +353,7 @@ class MiningHiddenLink:
 if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     rundate = time.strftime("%m%d%H%M", time.localtime())
-    today = time.strftime("%Y-%m-%d-%H-%M", time.localtime())
+    today = time.strftime("%Y-%m-%d", time.localtime())
     default_log_file = BASE_DIR + '/' + today + '.log'
 
 
@@ -355,50 +379,98 @@ if __name__ == '__main__':
     node_dim = 2
     dt = 0.05
 
-    ttime = 1.0 * obs_num * dt
-    print(nodes_num, obs_num, ttime)
-    logging.info("start: " + str(nodes_num) + "x" + str(obs_num))
 
-    save_path = BASE_DIR + '/data/' + str(nodes_num) + "x" + str(obs_num)
-    if not os.path.exists(save_path):
-        os.mkdir(save_path)
-    save_path = save_path + "/"
+    # If you want to do more tests, just add parameters in this list.
+    test = [
+        [1000, 80],
+        [1000, 90],
+        [1000, 100],
+        [1000, 110],
+        [1000, 120],
+    ]
+    for nodes_num, obs_num in test:
+        ttime = 1.0 * obs_num * dt
+        print(nodes_num, obs_num, ttime)
+        logging.info("start: " + str(nodes_num) + "x" + str(obs_num))
 
-    sim = simulation(save_path)
-    mhl = MiningHiddenLink(save_path)
-    ac = accuracy(save_path)
+        save_path = BASE_DIR + '/data/' + str(nodes_num) + "x" + str(obs_num)
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+        save_path = save_path + "/"
 
-    # 1 Generate simulation data
-    obs_filepath, true_net_filepath = sim.do(K, nodes_num, node_dim, ttime, dt)
-    logging.info("step 1: " + obs_filepath)
-    logging.info("step 1: " + true_net_filepath)
+        sim = simulation(save_path)
+        mhl = MiningHiddenLink(save_path)
+        ac = accuracy(save_path)
 
-    # 2 Estimate the edge matrix E
-    logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link start")
-    current_time = datetime.now()
-    e_filepath = mhl.do(nodes_num, K, int(ttime/dt), 0.05, obs_filepath, true_net_filepath)
-    logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link done")
-    logging.info(str(nodes_num) + "x" + str(obs_num) + "mining hidden link time: " + str( datetime.now() - current_time ))
-    logging.info("step 2: " + e_filepath)
+        if os.path.exists(save_path + "/result_seed0.log"):
+            acc2 = ac.get_accuracy2_cpp(save_path)
+            print("Average accuracy2: %.6f" % acc2)
+            logging.info("%d x %d Average accuracy2: %.6f" % (nodes_num, obs_num, acc2))
+            continue
 
-    # 3 Process data files
-    true_net_re_filepath = save_path + "to_file_true_net_" + rundate + "_re.csv"
-    true_net = pd.read_csv(true_net_filepath, sep=',')
-    hidden_link = pd.read_csv(e_filepath, sep=',', header=None)
-    true_net['e'] = hidden_link.values.flatten()
-    true_net.to_csv(true_net_re_filepath, header=True, index=None)
-    logging.info("step 3: " + true_net_re_filepath)
+        is_estimate = True
+        files = os.listdir(save_path)
+        for f in files:
+            if 'to_file_E' in f:
+                e_filepath = save_path + "/" + str(f)
+                print(e_filepath)
+                is_estimate = False
+            if 'to_file_true_net_' in f:
+                true_net_re_filepath = save_path + "/" + str(f)
+                print(true_net_re_filepath)
+            if 'obs_' in f and 'original' in f:
+                obs_filepath = save_path + "/" + str(f)
+                print(obs_filepath)
+            if 'true_net_' in f and 'original' in f:
+                true_net_filepath = save_path + "/" + str(f)
+                print(true_net_filepath)
 
-    # 4 Estimate the observation data with E
-    obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath)
-    logging.info("step 4: " + obs_filepath_2)
-    logging.info("step 4: " + true_net_filepath_2)
+        if is_estimate:
+            # 1 Generate simulation data
+            obs_filepath = "/Users/woffee/www/wenbo_at_kong/proposal/data/200x100/obs_200x100_original_11111629.csv"
+            true_net_filepath = "/Users/woffee/www/wenbo_at_kong/proposal/data/200x100/true_net_200x100_original_11111629.csv"
 
-    # 5 Assess accuracy
-    a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
-    a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num)
-    print("accuracy1:", a1)
-    print("accuracy2:", a2)
-    logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy1: " + str(a1))
-    logging.info("step 5 " + str(nodes_num) + "x" + str(obs_num) + " accuracy2: " + str(a2))
+            # 2 Estimate the edge matrix E
+            e_filepath = "/Users/woffee/www/wenbo_at_kong/proposal/data/200x100/to_file_E_11111628.csv"
+
+            # 3 Process data files
+            true_net_re_filepath = "/Users/woffee/www/wenbo_at_kong/proposal/data/200x100/to_file_true_net_11111628_re.csv"
+
+
+        # 4 Estimate the observation data with E
+        acc1 = []
+        acc2 = []
+        for seed in range(5):
+            obs_filepath_2 = save_path + "obs_%dx%d_estimate_seed%d.csv" % (nodes_num, obs_num, seed)
+            true_net_filepath_2 = save_path + "true_net_%dx%d_estimate_seed%d.csv" % (nodes_num, obs_num, seed)
+            if os.path.exists(obs_filepath_2):
+                print("file exists: ", obs_filepath_2)
+            else:
+                obs_filepath_2, true_net_filepath_2 = sim.do(K, nodes_num, node_dim, ttime, dt, true_net_re_filepath,
+                                                             seed)
+                logging.info("step 4: " + obs_filepath_2)
+                logging.info("step 4: " + true_net_filepath_2)
+
+            # 5 Assess accuracy
+            a1 = ac.get_accuracy1(obs_filepath, obs_filepath_2, K, nodes_num)
+            acc1.append(a1)
+            # a2 = ac.get_accuracy2(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num, save_path)
+            filepath_e = save_path + "data_estimate_seed%d.csv" % seed
+            filepath_o = save_path + "data_original_seed%d.csv" % seed
+
+            logfile = save_path + "result_seed%d.log" % seed
+            ac.build_acc_file(obs_filepath, obs_filepath_2, true_net_filepath, true_net_filepath_2, K, nodes_num, save_path, filepath_o, filepath_e)
+
+            cmd = "/Users/woffee/www/rrpnhat/evaluation/evaluation %s %s >> %s &" % (filepath_e, filepath_o, logfile)
+            print(cmd)
+            os.system(cmd)
+
+            print("seed:%d, accuracy1:%.6f" % (seed, a1))
+            # print("seed:%d, accuracy2:%.6f" % (seed, a2) )
+            logging.info("step 5, %d x %d, seed: %d, accuracy1: %.4f" % (nodes_num, obs_num, seed, a1))
+            # logging.info("step 5, %d x %d, seed: %d, accuracy2: %.4f" % (nodes_num, obs_num, seed, a2))
+        print("Average accuracy1: %.6f" % np.mean(acc1))
+        logging.info("%d x %d Average accuracy1: %.6f" % (nodes_num, obs_num, np.mean(acc1)))
+        logging.info("---------")
+        print()
 

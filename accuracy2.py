@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import os
+import logging
 
 class accuracy:
     def __init__(self, save_path):
@@ -105,7 +106,36 @@ class accuracy:
                 data.append(row)
         return np.array(data)
 
-    def get_accuracy2(self, fp_obs_o, fp_obs_e, fp_true_net_o, fp_true_net_e, K, num_nodes):
+    def build_acc_file(self, fp_obs_o, fp_obs_e, fp_true_net_o, fp_true_net_e, K, num_nodes, save_path, filepath_o, filepath_e):
+        data_o = self.get_data(fp_obs_o, fp_true_net_o, K, num_nodes)
+        data_e = self.get_data(fp_obs_e, fp_true_net_e, K, num_nodes)
+
+        # filepath_o = save_path + 'data_original.csv'
+        # filepath_e = save_path + 'data_estimate.csv'
+
+        np.savetxt(filepath_o, data_o, delimiter=',')
+        np.savetxt(filepath_e, data_e, delimiter=',')
+
+        print("saved to", filepath_o)
+        print("saved to", filepath_e)
+        return filepath_o, filepath_e
+
+    def get_accuracy2_cpp(self, filepath):
+        files = os.listdir(filepath)
+        acc = []
+        for f in files:
+            if 'result_seed' in f:
+                fullpath = filepath + "/" + f
+                cmd = "tail -n 1 %s" % fullpath
+                text = os.popen(cmd).read().strip()
+                ac = float(text.split(" ")[-1])
+                acc.append(ac)
+                print(text)
+                logging.info(text)
+        return np.mean(acc)
+
+
+    def get_accuracy2(self, fp_obs_o, fp_obs_e, fp_true_net_o, fp_true_net_e, K, num_nodes, save_path):
         data_o = self.get_data(fp_obs_o, fp_true_net_o, K, num_nodes)
         data_e = self.get_data(fp_obs_e, fp_true_net_e, K, num_nodes)
 
